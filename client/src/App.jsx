@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { FileCheck } from "lucide-react";
 
 import Login from "./pages/Login";
@@ -37,10 +37,36 @@ import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import Onboarding from "./pages/Onboarding";
 import TenantDashboard from "./pages/TenantDashboard";
+import SuperadminDashboard from "./pages/SuperadminDashboard";
+import OfficeDashboard from "./pages/OfficeDashboard";
+import { getUserLandingPath } from "./utils/auth";
+
+function DashboardEntry() {
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    // Keep the legacy dashboard available if the stored profile is malformed.
+  }
+
+  const landingPath = getUserLandingPath(user);
+  return landingPath && landingPath !== "/dashboard"
+    ? <Navigate to={landingPath} replace />
+    : <Layout><Dashboard /></Layout>;
+}
+
+function TenantDashboardEntry() {
+  let user = null;
+  try {
+    user = JSON.parse(localStorage.getItem("user") || "null");
+  } catch {
+    // The protected API remains the authority for tenant membership.
+  }
+  if (!user?.tenantId) return <Navigate to="/office-dashboard" replace />;
+  return <Layout><TenantDashboard /></Layout>;
+}
 
 const ROLE_DASHBOARD_ROUTES = [
-  ["/admin-dashboard", "superadmin"],
-  ["/office-dashboard", "admin"],
   ["/manager-dashboard", "manager"],
   ["/maker-dashboard", "intern"],
   ["/client-dashboard", "client"],
@@ -56,15 +82,46 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
-        <Route path="/tenant-dashboard" element={<ProtectedRoute><TenantDashboard /></ProtectedRoute>} />
+        <Route
+          path="/tenant-dashboard"
+          element={
+            <ProtectedRoute>
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <TenantDashboardEntry />
+              </RoleProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin-dashboard"
+          element={
+            <ProtectedRoute>
+              <RoleProtectedRoute allowedRoles={["superadmin"]}>
+                <Layout>
+                  <SuperadminDashboard />
+                </Layout>
+              </RoleProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/office-dashboard"
+          element={
+            <ProtectedRoute>
+              <RoleProtectedRoute allowedRoles={["admin"]}>
+                <Layout>
+                  <OfficeDashboard />
+                </Layout>
+              </RoleProtectedRoute>
+            </ProtectedRoute>
+          }
+        />
         {/* DASHBOARD */}
         <Route
           path="/dashboard"
           element={
             <ProtectedRoute>
-              <Layout>
-                <Dashboard />
-              </Layout>
+              <DashboardEntry />
             </ProtectedRoute>
           }
         />

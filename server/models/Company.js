@@ -2,6 +2,16 @@ import mongoose from "mongoose";
 
 const companySchema = new mongoose.Schema(
   {
+    officeAdmin: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      index: true,
+    },
+    tenantId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Tenant",
+      index: true,
+    },
     // 🔥 Link to client (User)
     client: {
       type: mongoose.Schema.Types.ObjectId,

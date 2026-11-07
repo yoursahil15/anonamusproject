@@ -4,6 +4,7 @@ import DocumentMaster from "../models/DocumentMaster.js";
 import GeneratedDocument from "../models/GeneratedDocument.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
+import { getOfficeCompanyIds } from "../utils/officeScope.js";
 
 import pdf from "html-pdf-node";
 
@@ -915,7 +916,9 @@ export const generateProductionExtract = async (req, res) => {
 };
 export const getGeneratedDocumentsByClient = async (req, res) => {
   try {
-    const documents = await GeneratedDocument.find()
+    const companyIds = await getOfficeCompanyIds(req.user);
+    const query = companyIds === null ? {} : { company: { $in: companyIds } };
+    const documents = await GeneratedDocument.find(query)
       .populate("company", "nameOfCompany")
       .populate("maker", "fname lname permissions")
       .populate("checker", "fname lname")
@@ -961,11 +964,18 @@ export const getGeneratedDocumentById = async (req, res) => {
 
 export const getGeneratedDocumentFile = async (req, res) => {
   try {
-    const document = await GeneratedDocument.findById(req.params.documentId);
+    const document = req.officeDocument?._id
+      ? await GeneratedDocument.findById(req.officeDocument._id)
+      : await GeneratedDocument.findById(req.params.documentId);
     if (!document) return res.status(404).json({ msg: "Document not found" });
     const permissions = req.user?.permissions || [];
     const userId = String(req.user?.id || "");
-    const permitted = permissions.includes("superadmin") || [document.maker, document.checker, document.approver].some((owner) => String(owner || "") === userId);
+    const tenantAdminApprovedDocument =
+      req.user?.role === "admin" &&
+      Boolean(req.user?.tenantId) &&
+      document.status === "APPROVED" &&
+      Boolean(req.officeDocument?._id);
+    const permitted = permissions.includes("superadmin") || tenantAdminApprovedDocument || [document.maker, document.checker, document.approver].some((owner) => String(owner || "") === userId);
     if (!permitted) return res.status(403).json({ msg: "Not authorized to access this document" });
     if (document.storageType !== "filesystem" || !document.filePath) return res.status(410).json({ msg: "Legacy S3 document is not stored on this server. Migrate it from an authorized backup first." });
     const safeName = String(document.fileName || "document").replace(/[\r\n\"]+/g, "_");

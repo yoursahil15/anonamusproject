@@ -18,7 +18,12 @@ import uploadRoutes from "./routes/uploadRoutes.js";
 // MIDDLEWARE IMPORTS
 // =====================================
 
-import { legacyTenantGuard } from "./middleware/legacyTenantGuard.js";
+import {
+  legacyTenantGuard,
+  legacyUserTenantGuard,
+  tenantScopedCompanyGuard,
+  legacyGeneratedListGuard,
+} from "./middleware/legacyTenantGuard.js";
 
 const app = express();
 
@@ -82,11 +87,11 @@ app.use("/api/auth", authRoutes);
 // Apply tenant middleware only to protected APIs.
 
 app.use("/api/uploads", legacyTenantGuard);
-app.use("/api/users", legacyTenantGuard);
-app.use("/api/companies", legacyTenantGuard);
+app.use("/api/users", legacyUserTenantGuard);
+app.use("/api/companies", tenantScopedCompanyGuard);
 app.use("/documents", legacyTenantGuard);
 app.use("/api/banks", legacyTenantGuard);
-app.use("/api/documents", legacyTenantGuard);
+app.use("/api/documents", legacyGeneratedListGuard);
 app.use("/api/document-master", legacyTenantGuard);
 app.use("/api/company-documents", legacyTenantGuard);
 

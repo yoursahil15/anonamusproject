@@ -10,11 +10,19 @@ export default function Sidebar({
   onToggleCollapse,
   mobileOpen = false,
   onNavigate,
+  onLogout,
 }) {
   const location = useLocation();
 
-  const isActive = (path) =>
-    location.pathname === path || location.pathname.startsWith(`${path}/`);
+  const isActive = (path) => {
+    const target = new URL(path, window.location.origin);
+    const pathname = target.pathname;
+    const hash = target.hash;
+    if (location.pathname !== pathname) return location.pathname.startsWith(`${pathname}/`);
+    if (hash && location.hash !== hash) return false;
+    if (target.search && location.search !== target.search) return false;
+    return hash ? true : !location.hash;
+  };
 
   return (
     <>
@@ -50,7 +58,7 @@ export default function Sidebar({
           </button>
         </div>
 
-        <nav className="min-h-0 flex-1 overflow-y-auto px-2 py-4">
+        <nav className={`min-h-0 flex-1 overflow-y-auto px-2 py-4 ${user?.tenantId && user.role === "admin" ? "scrollbar-hidden" : ""}`}>
           {SECTIONS.map((section) => {
             const sectionItems = items.filter((item) => item.section === section);
             if (!sectionItems.length) return null;
@@ -66,9 +74,23 @@ export default function Sidebar({
                   {sectionItems.map((item) => {
                     const Icon = item.icon;
                     const active = isActive(item.path);
+                    if (item.action === "logout") {
+                      return (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={() => { onNavigate?.(); onLogout?.(); }}
+                          title={collapsed ? item.label : undefined}
+                          className={`group relative flex min-h-10 w-full items-center rounded-lg text-left text-[12px] font-medium text-slate-300 transition hover:bg-white/[0.07] hover:text-white ${collapsed ? "justify-center px-2" : "gap-3 px-3"}`}
+                        >
+                          <Icon size={17} className="shrink-0 text-slate-400 group-hover:text-blue-300" />
+                          {!collapsed && <span className="min-w-0 flex-1 truncate">{item.label}</span>}
+                        </button>
+                      );
+                    }
                     return (
                       <Link
-                        key={item.path}
+                        key={item.label}
                         to={item.path}
                         onClick={onNavigate}
                         title={collapsed ? item.label : undefined}

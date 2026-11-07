@@ -80,6 +80,7 @@ export const createUser = async (req, res) => {
       isVerified: false,
       isActive: true,
       isApproved: true,
+      tenantId: loggedInUser.tenantId || undefined,
     };
 
     // ================= HIERARCHY =================
@@ -131,6 +132,18 @@ export const createUser = async (req, res) => {
         });
       }
 
+      if (loggedInUser.tenantId) {
+        const manager = await User.findOne({
+          _id: managerId,
+          role: "manager",
+          admin: loggedInUser.id,
+          tenantId: loggedInUser.tenantId,
+        }).select("_id");
+        if (!manager) {
+          return res.status(400).json({ msg: "Select a manager from your tenant." });
+        }
+      }
+
       newUserData.manager = managerId;
       newUserData.admin = loggedInUser.id;
     }
@@ -175,28 +188,27 @@ export const getUsers = async (req, res) => {
     // ================= ADMIN =================
 
     else if (loggedInUser.role === "admin") {
+      const tenantScope = loggedInUser.tenantId
+        ? { tenantId: loggedInUser.tenantId }
+        : {};
       const managers = await User.find({
         role: "manager",
         admin: loggedInUser.id,
+        ...tenantScope,
       }).select("_id");
 
       const managerIds = managers.map((m) => m._id);
 
       users = await User.find({
-        $or: [
+        $and: [
           {
-            _id: loggedInUser.id,
+            $or: [
+              { _id: loggedInUser.id },
+              { role: "manager", admin: loggedInUser.id },
+              { role: "intern", manager: { $in: managerIds } },
+            ],
           },
-
-          {
-            role: "manager",
-            admin: loggedInUser.id,
-          },
-
-          {
-            role: "intern",
-            manager: { $in: managerIds },
-          },
+          tenantScope,
         ],
       }).select("-password");
     }
@@ -204,16 +216,18 @@ export const getUsers = async (req, res) => {
     // ================= MANAGER =================
 
     else if (loggedInUser.role === "manager") {
+      const tenantScope = loggedInUser.tenantId
+        ? { tenantId: loggedInUser.tenantId }
+        : {};
       users = await User.find({
-        $or: [
+        $and: [
           {
-            _id: loggedInUser.id,
+            $or: [
+              { _id: loggedInUser.id },
+              { role: "intern", manager: loggedInUser.id },
+            ],
           },
-
-          {
-            role: "intern",
-            manager: loggedInUser.id,
-          },
+          tenantScope,
         ],
       }).select("-password");
     }
@@ -223,6 +237,7 @@ export const getUsers = async (req, res) => {
     else {
       users = await User.find({
         _id: loggedInUser.id,
+        ...(loggedInUser.tenantId ? { tenantId: loggedInUser.tenantId } : {}),
       }).select("-password");
     }
 

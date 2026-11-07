@@ -27,6 +27,12 @@ import {
   getGeneratedDocumentFile,
 } from "../controllers/documentController.js";
 import { protect } from "../middleware/authMiddleware.js";
+import {
+  requireActiveTenant,
+  requireMakerPermission,
+  requireOfficeDocument,
+  requireOfficeCompany,
+} from "../middleware/officeWorkflowAccess.js";
 
 const router = express.Router();
 
@@ -38,49 +44,62 @@ router.delete("/generated/:id", protect, deleteGeneratedDocument);
 router.post(
   "/generate-disbursement-agreement/:companyId",
   protect,
+  requireActiveTenant,
+  requireMakerPermission,
+  requireOfficeCompany,
   generateDisbursementAgreement,
 );
 // ================= COVERING LETTER =================
 
-router.post("/generate-word/:companyId", protect, generateCoveringWordFile);
+router.post("/generate-word/:companyId", protect, requireActiveTenant, requireMakerPermission, requireOfficeCompany, generateCoveringWordFile);
 
 // ================= POWER SUBSIDY =================
 
 router.post(
   "/generate-power-subsidy/:companyId",
   protect,
+  requireActiveTenant,
+  requireMakerPermission,
+  requireOfficeCompany,
   generatePowerSubsidyDocument,
 );
 
 // ================= APPENDIX A =================
 
-router.post("/appendix/:companyId", protect, generateAppendix);
+router.post("/appendix/:companyId", protect, requireActiveTenant, requireMakerPermission, requireOfficeCompany, generateAppendix);
 
 // ================= DOCUMENT MASTER =================
 
 router.post(
   "/generate-from-master/:companyId/:documentType",
   protect, // âœ… REQUIRED
+  requireActiveTenant,
+  requireMakerPermission,
+  requireOfficeCompany,
   generateDocumentFromMaster,
 );
 // ================= INTEREST SUBSIDY =================
 router.post(
   "/generate-interest-subsidy/:companyId",
   protect,
+  requireActiveTenant,
+  requireMakerPermission,
+  requireOfficeCompany,
   generateInterestSubsidyDocument,
 );
 
-router.post("/generate-affidavit/:companyId", protect, generateAffidavit);
+router.post("/generate-affidavit/:companyId", protect, requireActiveTenant, requireMakerPermission, requireOfficeCompany, generateAffidavit);
 
-router.post("/appendix/:companyId", protect, generateAppendix);
+router.post("/appendix/:companyId", protect, requireActiveTenant, requireMakerPermission, requireOfficeCompany, generateAppendix);
 
 router.get(
   "/generated",
   protect,
+  requireActiveTenant,
   getGeneratedDocumentsByClient,
 );
 
-router.get("/generated/:documentId/file", protect, getGeneratedDocumentFile);
+router.get("/generated/:documentId/file", protect, requireActiveTenant, requireOfficeDocument, getGeneratedDocumentFile);
 
 router.get(
   "/generated/:documentId",
@@ -95,13 +114,16 @@ router.put(
 );
 
 // ================= ELP =================
-router.post("/generate/elp/:companyId", protect, generateELPForm);
+router.post("/generate/elp/:companyId", protect, requireActiveTenant, requireMakerPermission, requireOfficeCompany, generateELPForm);
 
 // ================= PRODUCTION EXTRACT =================
 
 router.post(
   "/generate-production-extract/:companyId",
   protect,
+  requireActiveTenant,
+  requireMakerPermission,
+  requireOfficeCompany,
   generateProductionExtract,
 );
 // ================= CHECKER =================

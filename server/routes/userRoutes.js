@@ -6,6 +6,7 @@ import {
 } from "../controllers/userController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { authorize } from "../middleware/roleMiddleware.js";
+import { requireActiveTenant } from "../middleware/officeWorkflowAccess.js";
 import {
   updateUser,
   updateUserPermissions,
@@ -18,6 +19,7 @@ const router = express.Router();
 router.post(
   "/",
   protect,
+  requireActiveTenant,
   authorize("superadmin", "admin", "manager"),
   createUser,
 );
@@ -26,7 +28,7 @@ router.post(
 router.get(
   "/",
   protect,
-
+  requireActiveTenant,
   authorize("superadmin", "admin", "manager", "intern"),
   getUsers,
 );

@@ -14,7 +14,7 @@ export const getDashboardPath = (role) => {
 export const getUserLandingPath = (user) => {
   if (!user || typeof user !== "object" || Array.isArray(user)) return null;
 
-  if (user.tenantId) {
+  if (user.tenantId && String(user.role || "").toLowerCase() === "admin") {
     return user.onboardingStatus === "COMPLETED"
       ? "/tenant-dashboard"
       : "/onboarding";

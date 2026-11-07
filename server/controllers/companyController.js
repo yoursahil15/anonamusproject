@@ -1,4 +1,5 @@
 import Company from "../models/Company.js";
+import { getCompanyScope, getOfficeAdminId } from "../utils/officeScope.js";
 import XLSX from "xlsx";
 
 // ================= CREATE COMPANY =================
@@ -86,7 +87,16 @@ export const createCompany = async (req, res) => {
 
     // ================= CREATE COMPANY =================
 
+    const ownership = req.user?.role === "superadmin"
+      ? {}
+      : {
+          officeAdmin: await getOfficeAdminId(req.user),
+          tenantId: req.user?.tenantId || undefined,
+          ...(req.user?.role === "client" ? { client: req.user.id } : {}),
+        };
+
     const company = await Company.create({
+      ...ownership,
       nameOfCompany,
       pan,
       gst,
@@ -127,7 +137,7 @@ export const createCompany = async (req, res) => {
 
 export const getCompanies = async (req, res) => {
   try {
-    const companies = await Company.find();
+    const companies = await Company.find(await getCompanyScope(req.user));
 
     res.json(companies);
   } catch (error) {
@@ -152,6 +162,10 @@ export const uploadCompanies = async (req, res) => {
 
     for (let row of data) {
       companies.push({
+        ...(req.user?.role === "superadmin" ? {} : {
+          officeAdmin: await getOfficeAdminId(req.user),
+          tenantId: req.user?.tenantId || undefined,
+        }),
         nameOfCompany: row.nameOfCompany,
         pan: row.pan,
         gst: row.gst,
@@ -207,7 +221,10 @@ export const getCompanyById = async (req, res) => {
   try {
     const { companyId } = req.params;
 
-    const company = await Company.findById(companyId);
+    const company = await Company.findOne({
+      _id: companyId,
+      ...(await getCompanyScope(req.user)),
+    });
 
     if (!company) {
       return res.status(404).json({
@@ -242,9 +259,33 @@ export const updateCompany = async (req, res) => {
       }
     }
 
-    const updatedCompany = await Company.findByIdAndUpdate(
-      companyId,
-      req.body,
+    const editableFields = [
+      "nameOfCompany",
+      "pan",
+      "gst",
+      "factoryAddress",
+      "registeredOfficeAddress",
+      "ecNumber",
+      "ecDate",
+      "udyamNumber",
+      "mpcbDetails",
+      "contactPerson",
+      "phone",
+      "email",
+      "authorizedSignatories",
+      "dateOfIncorporation",
+      "operatingPeriodFrom",
+      "operatingPeriodTo",
+      "operatingPeriod",
+    ];
+    const updates = Object.fromEntries(
+      editableFields
+        .filter((field) => Object.hasOwn(req.body, field))
+        .map((field) => [field, req.body[field]]),
+    );
+    const updatedCompany = await Company.findOneAndUpdate(
+      { _id: companyId, ...(await getCompanyScope(req.user)) },
+      updates,
       {
         new: true,
         runValidators: true,
@@ -280,7 +321,10 @@ export const deleteCompany = async (req, res) => {
   try {
     const { companyId } = req.params;
 
-    const deletedCompany = await Company.findByIdAndDelete(companyId);
+    const deletedCompany = await Company.findOneAndDelete({
+      _id: companyId,
+      ...(await getCompanyScope(req.user)),
+    });
 
     if (!deletedCompany) {
       return res.status(404).json({
