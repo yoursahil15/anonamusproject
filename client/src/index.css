@@ -1,0 +1,158 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.document-form-theme {
+  min-width: 0;
+  color: #0f172a;
+  background-color: #eff6ff !important;
+}
+
+.document-form-theme *,
+.document-form-theme *::before,
+.document-form-theme *::after {
+  box-sizing: border-box;
+}
+
+.document-form-theme input:not([type="checkbox"]):not([type="radio"]),
+.document-form-theme select,
+.document-form-theme textarea {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  color: #0f172a;
+  background-color: #ffffff;
+  font-size: 14px;
+  line-height: 20px;
+  outline: none;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background-color 150ms ease;
+}
+
+.document-form-theme select#company,
+.document-form-theme select#template {
+  padding-left: 36px;
+  padding-right: 12px;
+}
+
+.document-form-theme textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.document-form-theme input::placeholder,
+.document-form-theme textarea::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+.document-form-theme input:focus,
+.document-form-theme select:focus,
+.document-form-theme textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 15%);
+}
+
+.document-form-theme input:disabled,
+.document-form-theme input[readonly],
+.document-form-theme select:disabled,
+.document-form-theme textarea:disabled {
+  color: #64748b;
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.document-form-theme section {
+  border-color: #bfdbfe;
+}
+
+.document-form-theme [class*="bg-emerald-"],
+.document-form-theme [class*="bg-green-"],
+.document-form-theme [class*="bg-indigo-"],
+.document-form-theme [class*="bg-violet-"],
+.document-form-theme [class*="bg-amber-"],
+.document-form-theme [class*="bg-gray-"] {
+  background-color: #eff6ff !important;
+}
+
+.document-form-theme [class*="from-indigo-"],
+.document-form-theme [class*="from-violet-"],
+.document-form-theme [class*="from-emerald-"],
+.document-form-theme [class*="from-green-"],
+.document-form-theme [class*="from-slate-"],
+.document-form-theme [class*="from-blue-"],
+.document-form-theme [class*="bg-gradient-to-"],
+.document-form-theme [class*="to-indigo-"],
+.document-form-theme [class*="to-violet-"] {
+  background-image: none !important;
+}
+
+.document-form-theme [class*="bg-gradient-to-"] {
+  background-color: #eff6ff !important;
+}
+
+.document-form-theme [class*="text-emerald-"],
+.document-form-theme [class*="text-green-"],
+.document-form-theme [class*="text-indigo-"],
+.document-form-theme [class*="text-violet-"],
+.document-form-theme [class*="text-amber-"] {
+  color: #1d4ed8 !important;
+}
+
+.document-form-theme [class*="text-gray-"] {
+  color: #64748b !important;
+}
+.document-form-theme [class*="border-emerald-"],
+.document-form-theme [class*="border-green-"],
+.document-form-theme [class*="border-indigo-"],
+.document-form-theme [class*="border-violet-"],
+.document-form-theme [class*="border-amber-"],
+.document-form-theme [class*="border-gray-"] {
+  border-color: #bfdbfe !important;
+}
+
+.document-form-theme button[class*="bg-emerald-600"],
+.document-form-theme button[class*="bg-emerald-700"],
+.document-form-theme button[class*="bg-green-600"],
+.document-form-theme button[class*="bg-green-700"],
+.document-form-theme button[class*="bg-indigo-600"],
+.document-form-theme button[class*="bg-indigo-700"],
+.document-form-theme button[class*="bg-violet-600"],
+.document-form-theme button[class*="bg-violet-700"] {
+  color: #ffffff !important;
+  background-color: #2563eb !important;
+}
+
+.document-form-theme button[class*="hover:bg-emerald-"]:hover,
+.document-form-theme button[class*="hover:bg-green-"]:hover,
+.document-form-theme button[class*="hover:bg-indigo-"]:hover,
+.document-form-theme button[class*="hover:bg-violet-"]:hover,
+.document-form-theme button[class*="bg-emerald-600"]:hover,
+.document-form-theme button[class*="bg-emerald-700"]:hover,
+.document-form-theme button[class*="bg-green-600"]:hover,
+.document-form-theme button[class*="bg-green-700"]:hover,
+.document-form-theme button[class*="bg-indigo-600"]:hover,
+.document-form-theme button[class*="bg-indigo-700"]:hover,
+.document-form-theme button[class*="bg-violet-600"]:hover,
+.document-form-theme button[class*="bg-violet-700"]:hover {
+  background-color: #1d4ed8 !important;
+}
+
+.document-form-theme button[class*="hover:bg-slate-50"]:hover {
+  border-color: #bfdbfe;
+  background-color: #eff6ff;
+}
+
+.document-form-theme button:disabled {
+  color: #64748b;
+  border-color: #cbd5e1;
+  background-color: #f1f5f9;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 1;
+}
