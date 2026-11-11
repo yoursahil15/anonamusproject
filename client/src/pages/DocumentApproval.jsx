@@ -349,8 +349,14 @@ export default function DocumentApproval() {
       setLoading(true);
       setError("");
 
-      const res = await API.get("/documents/approval-documents");
-      setDocuments(Array.isArray(res.data) ? res.data : []);
+      // Tenant accounts must use the tenant-scoped API. The legacy
+      // /documents/approval-documents route is intentionally blocked for them.
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      const res = storedUser?.tenantId
+        ? await API.get("/tenant/documents", { params: { limit: 100 } })
+        : await API.get("/documents/approval-documents");
+      const rows = storedUser?.tenantId ? res.data?.data : res.data;
+      setDocuments(Array.isArray(rows) ? rows : []);
     } catch (err) {
       console.error("Failed to fetch documents:", err);
       setError("Unable to load documents. Please try again.");
@@ -384,8 +390,17 @@ export default function DocumentApproval() {
         }
       }
 
-      const endpoint =
-        workflow === "checker"
+      let storedUser = null;
+      try {
+        storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      } catch {
+        // The request will use the legacy route if no valid tenant profile exists.
+      }
+      const endpoint = storedUser?.tenantId
+        ? workflow === "checker"
+          ? `/tenant/documents/${documentId}/check`
+          : `/tenant/documents/${documentId}/approve`
+        : workflow === "checker"
           ? `/documents/checker-action/${documentId}`
           : `/documents/approver-action/${documentId}`;
 
@@ -394,7 +409,8 @@ export default function DocumentApproval() {
         setProcessingId(documentId);
         setError("");
 
-        await API.put(endpoint, { action, reason });
+        if (storedUser?.tenantId) await API.post(endpoint, { action, reason });
+        else await API.put(endpoint, { action, reason });
 
         window.alert(
           action === "approve"
@@ -450,7 +466,11 @@ export default function DocumentApproval() {
       downloadingRef.current = true;
       setDownloadingId(doc._id);
 
-      const response = await API.get(`/documents/generated/${doc._id}/file`, {
+      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      const fileEndpoint = storedUser?.tenantId
+        ? `/tenant/documents/${doc._id}/download`
+        : `/documents/generated/${doc._id}/file`;
+      const response = await API.get(fileEndpoint, {
         responseType: "blob",
       });
 
