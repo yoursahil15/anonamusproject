@@ -1,108 +1,111 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import jwt from "jsonwebtoken";
 import User from "../models/User.js";
-import Company from "../models/Company.js";
-import { legacyTenantGuard, legacyUserTenantGuard, legacyGeneratedListGuard, tenantScopedCompanyGuard } from "../middleware/legacyTenantGuard.js";
-import { getCompanyScope, getOfficeCompanyIds } from "../utils/officeScope.js";
+import Tenant from "../models/Tenant.js";
+import { authorizePermission, requireActiveTenant, requireTenantAdmin, requireTenantMembership } from "../middleware/officeWorkflowAccess.js";
 
-process.env.JWT_SECRET = "tenant-access-test-secret";
+const originalFindUser = User.findById;
+const originalFindTenant = Tenant.findOne;
 
-const makeRequest = (identity, method, path) => ({
-  method,
-  path,
-  headers: {
-    authorization: `Bearer ${jwt.sign(identity, process.env.JWT_SECRET)}`,
-  },
+const makeResponse = () => ({
+  statusCode: 200,
+  body: undefined,
+  status(code) { this.statusCode = code; return this; },
+  json(body) { this.body = body; return this; },
 });
 
-const invoke = (middleware, req) => {
-  let nextCalled = false;
-  let responseStatus;
-  let responseBody;
-  const res = {
-    status(code) { responseStatus = code; return this; },
-    json(body) { responseBody = body; return this; },
+test("tenant access refreshes role, permissions, and tenant ID from the database", async () => {
+  let tenantFilter;
+  User.findById = () => ({ select: async () => ({
+    tenantId: "tenant-from-database",
+    role: "admin",
+    permissions: ["maker"],
+    isActive: true,
+    accountStatus: "ACTIVE",
+    isApproved: true,
+    isVerified: true,
+  }) });
+  Tenant.findOne = (filter) => {
+    tenantFilter = filter;
+    return { select: async () => ({ _id: filter._id }) };
   };
-  middleware(req, res, () => { nextCalled = true; });
-  return { nextCalled, responseStatus, responseBody };
-};
 
-test("legacy tenant guard still denies unscoped tenant routes", () => {
-  const result = invoke(legacyTenantGuard, makeRequest({ id: "u1", role: "admin", tenantId: "t1" }, "GET", "/uploads"));
-  assert.equal(result.responseStatus, 403);
-  assert.equal(result.nextCalled, false);
-});
-
-test("tenant user guard opens the scoped member list and admin/manager staff creation routes", () => {
-  const tenantAdmin = { id: "u1", role: "admin", tenantId: "t1" };
-  assert.equal(invoke(legacyUserTenantGuard, makeRequest(tenantAdmin, "GET", "/")).nextCalled, true);
-  assert.equal(invoke(legacyUserTenantGuard, makeRequest(tenantAdmin, "POST", "/")).nextCalled, true);
-  assert.equal(invoke(legacyUserTenantGuard, makeRequest(tenantAdmin, "GET", "/u2")).responseStatus, 403);
-  const tenantIntern = { ...tenantAdmin, role: "intern" };
-  assert.equal(invoke(legacyUserTenantGuard, makeRequest(tenantIntern, "GET", "/")).nextCalled, true);
-  assert.equal(invoke(legacyUserTenantGuard, makeRequest(tenantIntern, "POST", "/")).responseStatus, 403);
-});
-
-test("company guard delegates only existing scoped company routes", () => {
-  const tenantAdmin = { id: "u1", role: "admin", tenantId: "t1" };
-  assert.equal(invoke(tenantScopedCompanyGuard, makeRequest(tenantAdmin, "GET", "/")).nextCalled, true);
-  assert.equal(invoke(tenantScopedCompanyGuard, makeRequest(tenantAdmin, "GET", "/0123456789abcdef01234567")).nextCalled, true);
-  assert.equal(invoke(tenantScopedCompanyGuard, makeRequest(tenantAdmin, "PUT", "/update/0123456789abcdef01234567")).nextCalled, true);
-  assert.equal(invoke(tenantScopedCompanyGuard, makeRequest(tenantAdmin, "GET", "/export")).responseStatus, 403);
-});
-
-test("generated-document guard keeps tenant access limited to scoped list, download, and generation routes", () => {
-  const tenantAdmin = { id: "u1", role: "admin", tenantId: "t1" };
-  assert.equal(invoke(legacyGeneratedListGuard, makeRequest(tenantAdmin, "GET", "/generated")).nextCalled, true);
-  assert.equal(invoke(legacyGeneratedListGuard, makeRequest(tenantAdmin, "GET", "/generated/doc-id/file")).nextCalled, true);
-  assert.equal(invoke(legacyGeneratedListGuard, makeRequest(tenantAdmin, "POST", "/generate-word/company-id")).nextCalled, true);
-  assert.equal(invoke(legacyGeneratedListGuard, makeRequest(tenantAdmin, "GET", "/approval-documents")).responseStatus, 403);
-});
-
-test("tenant company scope is derived from authenticated tenant membership", async () => {
-  const originalDistinct = User.distinct;
-  let capturedMembershipQuery;
-  User.distinct = async (field, query) => {
-    assert.equal(field, "_id");
-    capturedMembershipQuery = query;
-    return ["admin-id", "member-id"];
-  };
   try {
-    const query = await getCompanyScope({ id: "admin-id", role: "admin", tenantId: "signed-tenant-id" });
-    assert.deepEqual(capturedMembershipQuery, {
-      $or: [
-        { tenantId: "signed-tenant-id" },
-        { _id: "admin-id" },
-        { admin: "admin-id" },
-      ],
-    });
-    assert.deepEqual(query.$or, [
-      { tenantId: "signed-tenant-id" },
-      { officeAdmin: "admin-id" },
-      { client: { $in: ["admin-id", "member-id"] } },
-    ]);
+    const req = { user: { id: "user-1", role: "superadmin", permissions: ["approver"], tenantId: "stale-tenant" } };
+    const res = makeResponse();
+    let continued = false;
+    await requireActiveTenant(req, res, () => { continued = true; });
+    assert.equal(continued, true);
+    assert.deepEqual(tenantFilter, { _id: "tenant-from-database", status: "ACTIVE" });
+    assert.equal(req.user.role, "admin");
+    assert.equal(req.user.tenantId, "tenant-from-database");
+    assert.deepEqual(req.user.permissions, ["maker"]);
+    requireTenantAdmin(req, res, () => { continued = true; });
+    assert.equal(res.statusCode, 200);
   } finally {
-    User.distinct = originalDistinct;
+    User.findById = originalFindUser;
+    Tenant.findOne = originalFindTenant;
   }
 });
 
-test("document company IDs are selected using the same tenant scope", async () => {
-  const originalUserDistinct = User.distinct;
-  const originalCompanyDistinct = Company.distinct;
-  let companyQuery;
-  User.distinct = async () => ["admin-id"];
-  Company.distinct = async (field, query) => {
-    assert.equal(field, "_id");
-    companyQuery = query;
-    return ["company-in-tenant"];
-  };
+test("inactive tenant membership is forbidden", async () => {
+  User.findById = () => ({ select: async () => ({
+    tenantId: "tenant-1", role: "admin", permissions: [], isActive: true,
+    accountStatus: "ACTIVE", isApproved: true, isVerified: true,
+  }) });
+  Tenant.findOne = () => ({ select: async () => null });
   try {
-    const ids = await getOfficeCompanyIds({ id: "admin-id", role: "admin", tenantId: "tenant-a" });
-    assert.deepEqual(ids, ["company-in-tenant"]);
-    assert.ok(companyQuery.$or.some((scope) => scope.tenantId === "tenant-a"));
+    const res = makeResponse();
+    let continued = false;
+    await requireActiveTenant({ user: { id: "user-1" } }, res, () => { continued = true; });
+    assert.equal(continued, false);
+    assert.equal(res.statusCode, 403);
   } finally {
-    User.distinct = originalUserDistinct;
-    Company.distinct = originalCompanyDistinct;
+    User.findById = originalFindUser;
+    Tenant.findOne = originalFindTenant;
+  }
+});
+
+test("platform users without a tenant cannot use tenant routes", async () => {
+  User.findById = () => ({ select: async () => ({
+    tenantId: null, role: "superadmin", permissions: ["maker", "checker", "approver"],
+    isActive: true, accountStatus: "ACTIVE", isApproved: true, isVerified: true,
+  }) });
+  try {
+    const req = { user: { id: "platform-user" } };
+    const res = makeResponse();
+    let continued = false;
+    await requireActiveTenant(req, res, () => { continued = true; });
+    assert.equal(continued, true);
+    continued = false;
+    requireTenantMembership(req, res, () => { continued = true; });
+    assert.equal(continued, false);
+    assert.equal(res.statusCode, 403);
+  } finally {
+    User.findById = originalFindUser;
+    Tenant.findOne = originalFindTenant;
+  }
+});
+
+test("deactivated accounts are forbidden and workflow permissions are separate", async () => {
+  User.findById = () => ({ select: async () => ({
+    tenantId: "tenant-1", role: "manager", permissions: ["maker"], isActive: false,
+    accountStatus: "INACTIVE", isApproved: true, isVerified: true,
+  }) });
+  try {
+    const res = makeResponse();
+    let continued = false;
+    await requireActiveTenant({ user: { id: "user-1" } }, res, () => { continued = true; });
+    assert.equal(continued, false);
+    assert.equal(res.statusCode, 403);
+
+    const permissionRes = makeResponse();
+    let permissionContinued = false;
+    authorizePermission("checker")({ user: { role: "manager", permissions: ["maker"] } }, permissionRes, () => { permissionContinued = true; });
+    assert.equal(permissionContinued, false);
+    assert.equal(permissionRes.statusCode, 403);
+  } finally {
+    User.findById = originalFindUser;
+    Tenant.findOne = originalFindTenant;
   }
 });

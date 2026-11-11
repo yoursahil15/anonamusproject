@@ -6,6 +6,7 @@ import { getCompanyScope } from "../utils/officeScope.js";
 
 export const requireActiveTenant = async (req, res, next) => {
   try {
+    if (req.tenantAuthVerified) return next();
     if (!req.user?.id) return res.status(401).json({ msg: "Authentication required." });
     // JWT claims can be stale. The database is authoritative for role, tenant,
     // account status, and workflow permissions on every tenant operation.
@@ -17,9 +18,14 @@ export const requireActiveTenant = async (req, res, next) => {
     }
     if (user.role === "superadmin" && !user.tenantId) {
       req.user = { ...req.user, role: user.role, permissions: user.permissions || [], tenantId: null };
+      req.tenantAuthVerified = true;
       return next();
     }
-    if (!user.tenantId) return next();
+    if (!user.tenantId) {
+      req.user = { ...req.user, role: user.role, permissions: user.permissions || [], tenantId: null };
+      req.tenantAuthVerified = true;
+      return next();
+    }
     const tenant = await Tenant.findOne({ _id: user.tenantId, status: "ACTIVE" }).select("_id");
     if (!tenant) {
       return res.status(403).json({ msg: "Active tenant membership is required." });
@@ -30,10 +36,16 @@ export const requireActiveTenant = async (req, res, next) => {
       permissions: user.permissions || [],
       tenantId: String(user.tenantId),
     };
+    req.tenantAuthVerified = true;
     return next();
   } catch {
     return res.status(500).json({ msg: "Unable to verify tenant membership." });
   }
+};
+
+export const requireTenantMembership = (req, res, next) => {
+  if (req.user?.tenantId) return next();
+  return res.status(403).json({ msg: "Tenant membership is required for this API." });
 };
 
 export const requireTenantAdmin = (req, res, next) => {

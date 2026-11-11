@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import Company from "../models/Company.js";
 import GeneratedDocument from "../models/GeneratedDocument.js";
 import { getCompanyScope } from "../utils/officeScope.js";
-import { getGeneratedDocumentFile } from "./documentController.js";
+import { editGeneratedDocument, getGeneratedDocumentFile } from "./documentController.js";
 import { recordTenantActivity, createTenantNotification, createTenantNotificationsForPermissions } from "./tenantSupportController.js";
 
 const pageParams = (query) => {
@@ -11,6 +11,7 @@ const pageParams = (query) => {
   return { page, limit, skip: (page - 1) * limit };
 };
 const validId = (id) => mongoose.Types.ObjectId.isValid(id);
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const scopedCompanyIds = async (user) => Company.distinct("_id", await getCompanyScope(user));
 const statusValues = GeneratedDocument.schema.path("status").enumValues;
 const parseDate = (value) => {
@@ -42,14 +43,14 @@ export const listTenantDocuments = async (req, res) => {
   if (from === null || to === null || (from && to && from > to)) return res.status(400).json({ success: false, msg: "Invalid date range." });
   if (from || to) filter.createdAt = { ...(from ? { $gte: from } : {}), ...(to ? { $lte: to } : {}) };
   if (req.query.search) {
-    const term = String(req.query.search).trim().slice(0, 100);
+    const term = escapeRegex(String(req.query.search).trim().slice(0, 100));
     filter.$and = [...(filter.$and || []), { $or: [
       { fileName: { $regex: term, $options: "i" } },
       { documentType: { $regex: term, $options: "i" } },
     ] }];
   }
   const [data, total] = await Promise.all([
-    GeneratedDocument.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit)
+    GeneratedDocument.find(filter).select("-filePath -s3Key -s3Url -s3Bucket").sort({ createdAt: -1 }).skip(skip).limit(limit)
       .populate("company", "nameOfCompany").populate("maker", "fname lname")
       .populate("checker", "fname lname").populate("approver", "fname lname").lean(),
     GeneratedDocument.countDocuments(filter),
@@ -60,7 +61,7 @@ export const listTenantDocuments = async (req, res) => {
 export const getTenantDocument = async (req, res) => {
   if (!validId(req.params.documentId)) return res.status(400).json({ success: false, msg: "Invalid document ID." });
   const companyIds = await scopedCompanyIds(req.user);
-  const document = await GeneratedDocument.findOne({ _id: req.params.documentId, company: { $in: companyIds } })
+  const document = await GeneratedDocument.findOne({ _id: req.params.documentId, company: { $in: companyIds } }).select("-filePath -s3Key -s3Url -s3Bucket")
     .populate("company", "nameOfCompany").populate("maker", "fname lname")
     .populate("checker", "fname lname").populate("approver", "fname lname").lean();
   if (!document) return res.status(404).json({ success: false, msg: "Document not found." });
@@ -75,7 +76,8 @@ export const getTenantDocumentHistory = async (req, res) => {
     .populate("maker", "fname lname").populate("workflowHistory.actor", "fname lname")
     .populate("editLogs.editedBy", "fname lname").lean();
   if (!document) return res.status(404).json({ success: false, msg: "Document not found." });
-  return res.json({ success: true, data: { createdAt: document.createdAt || document.uploadedAt, maker: document.maker, workflow: document.workflowHistory || [], edits: document.editLogs || [], currentStatus: document.status } });
+  const edits = (document.editLogs || []).map(({ editedBy, editedRole, previousFileName, newFileName, comment, editedAt }) => ({ editedBy, editedRole, previousFileName, newFileName, comment, editedAt }));
+  return res.json({ success: true, data: { createdAt: document.createdAt || document.uploadedAt, maker: document.maker, workflow: document.workflowHistory || [], edits, currentStatus: document.status } });
 };
 
 export const downloadTenantDocument = async (req, res, next) => {
@@ -85,6 +87,20 @@ export const downloadTenantDocument = async (req, res, next) => {
   if (!document) return res.status(404).json({ success: false, msg: "Document not found." });
   req.officeDocument = document;
   return getGeneratedDocumentFile(req, res, next);
+};
+
+export const editTenantRejectedDocument = async (req, res, next) => {
+  if (!validId(req.params.documentId)) return res.status(400).json({ success: false, msg: "Invalid document ID." });
+  const document = await GeneratedDocument.findOne({
+    _id: req.params.documentId,
+    company: { $in: await scopedCompanyIds(req.user) },
+    status: "REJECTED_BY_CHECKER",
+  }).select("_id maker checker");
+  if (!document) return res.status(404).json({ success: false, msg: "Rejected document not found." });
+  const isMaker = req.user.permissions?.includes("maker") && String(document.maker) === String(req.user.id);
+  const isChecker = req.user.permissions?.includes("checker") && String(document.checker) === String(req.user.id);
+  if (!isMaker && !isChecker) return res.status(403).json({ success: false, msg: "Only the document maker or assigned checker can edit it." });
+  return editGeneratedDocument(req, res, next);
 };
 
 export const listTenantWorkflow = async (req, res) => {
@@ -104,7 +120,7 @@ export const listTenantWorkflow = async (req, res) => {
   const { page, limit, skip } = pageParams(req.query);
   const filter = { company: { $in: await scopedCompanyIds(req.user) }, status: { $in: statuses } };
   const [data, total] = await Promise.all([
-    GeneratedDocument.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit)
+    GeneratedDocument.find(filter).select("-filePath -s3Key -s3Url -s3Bucket").sort({ createdAt: -1 }).skip(skip).limit(limit)
       .populate("company", "nameOfCompany").populate("maker", "fname lname")
       .populate("checker", "fname lname").populate("approver", "fname lname").lean(),
     GeneratedDocument.countDocuments(filter),

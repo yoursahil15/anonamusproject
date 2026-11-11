@@ -1,7 +1,7 @@
 import express from "express";
 import { getTenantDashboardStats } from "../controllers/tenantDashboardController.js";
 import { protect } from "../middleware/authMiddleware.js";
-import { requireActiveTenant, requireTenantAdmin } from "../middleware/officeWorkflowAccess.js";
+import { requireActiveTenant, requireTenantAdmin, requireTenantMembership } from "../middleware/officeWorkflowAccess.js";
 import {
   createTenantCompany,
   getTenantCompany,
@@ -21,6 +21,7 @@ import {
   approveTenantDocument,
   checkTenantDocument,
   downloadTenantDocument,
+  editTenantRejectedDocument,
   getTenantDocument,
   getTenantDocumentHistory,
   listTenantDocuments,
@@ -29,6 +30,7 @@ import {
 } from "../controllers/tenantDocumentController.js";
 import { authorizePermission } from "../middleware/officeWorkflowAccess.js";
 import { getTenantTemplate, listTenantTemplates } from "../controllers/tenantTemplateController.js";
+import { createTenantGeneratedDocument } from "../controllers/documentController.js";
 import {
   approvalStatisticsReport,
   companyStatisticsReport,
@@ -44,6 +46,8 @@ import {
 } from "../controllers/tenantSupportController.js";
 
 const router = express.Router();
+
+router.use(protect, requireActiveTenant, requireTenantMembership);
 
 router.get("/dashboard/stats", protect, requireActiveTenant, requireTenantAdmin, getTenantDashboardStats);
 
@@ -63,8 +67,10 @@ router.get("/employees/:employeeId/permissions", protect, requireActiveTenant, g
 router.put("/employees/:employeeId/permissions", protect, requireActiveTenant, requireTenantAdmin, updateTenantEmployeePermissions);
 
 router.get("/documents", protect, requireActiveTenant, requireTenantAdmin, listTenantDocuments);
+router.post("/documents", protect, requireActiveTenant, authorizePermission("maker"), createTenantGeneratedDocument);
 router.get("/documents/:documentId/history", protect, requireActiveTenant, requireTenantAdmin, getTenantDocumentHistory);
 router.get("/documents/:documentId/download", protect, requireActiveTenant, downloadTenantDocument);
+router.put("/documents/:documentId/edit", protect, requireActiveTenant, editTenantRejectedDocument);
 router.get("/documents/:documentId", protect, requireActiveTenant, requireTenantAdmin, getTenantDocument);
 router.post("/documents/:documentId/submit", protect, requireActiveTenant, authorizePermission("maker"), submitTenantDocument);
 router.post("/documents/:documentId/check", protect, requireActiveTenant, authorizePermission("checker"), checkTenantDocument);

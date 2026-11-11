@@ -21,6 +21,7 @@ import { generateELPExcel } from "../services/elpExcel.js";
 import { generateProductionExcel } from "../services/productionExtractExcel.js";
 import { storeDocument, deleteStoredFile, getStoredFilePath } from "../services/serverStorageService.js";
 import { saveGeneratedDocument } from "../services/documentService.js";
+import { recordTenantActivity } from "./tenantSupportController.js";
 
 
 import { generateAffidavitWord } from "../templates/generateAffidavitWord.js";
@@ -112,6 +113,7 @@ export const generateCoveringWordFile = async (req, res) => {
 
       status: "PENDING_CHECK", // ?? DEFAULT TO PENDING_CHECK
     });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     console.log(
       "? COVERING LETTER SAVED:",
@@ -203,6 +205,7 @@ export const generateDisbursementAgreement = async (req, res) => {
 
       status: "PENDING_CHECK", // ?? DEFAULT TO PENDING_CHECK
     });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     console.log("? DISBURSEMENT SAVED:", generatedDoc._id);
 
@@ -307,6 +310,7 @@ export const generateAppendix = async (req, res) => {
 
       status: "PENDING_CHECK",
     });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     console.log("? APPENDIX SAVED:", generatedDoc._id);
 
@@ -390,7 +394,7 @@ export const generateDocument = async (req, res) => {
     );
 
     // 6. SAVE IN DB (?? ALWAYS SAME WAY)
-    await saveGeneratedDocument({
+    const generatedDoc = await saveGeneratedDocument({
       companyId,
       documentType,
       fileName,
@@ -398,6 +402,7 @@ export const generateDocument = async (req, res) => {
       userId,
       status: "PENDING_CHECK",
     });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     // 7. RESPONSE
     res.set({
@@ -670,6 +675,7 @@ export const generatePowerSubsidyDocument = async (req, res) => {
 
       status: "PENDING_CHECK",
     });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     console.log("? POWER SUBSIDY SAVED:", generatedDoc._id);
 
@@ -744,6 +750,7 @@ metadata: req.body,
 
       status: "PENDING_CHECK",
     });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     console.log("? INTEREST SUBSIDY SAVED:", generatedDoc._id);
 
@@ -897,6 +904,7 @@ export const generateProductionExtract = async (req, res) => {
 
       status: "PENDING_CHECK",
     });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     console.log("? SAVED DOC:", generatedDoc._id);
 
@@ -919,6 +927,7 @@ export const getGeneratedDocumentsByClient = async (req, res) => {
     const companyIds = await getOfficeCompanyIds(req.user);
     const query = companyIds === null ? {} : { company: { $in: companyIds } };
     const documents = await GeneratedDocument.find(query)
+      .select("-filePath -s3Key -s3Url -s3Bucket")
       .populate("company", "nameOfCompany")
       .populate("maker", "fname lname permissions")
       .populate("checker", "fname lname")
@@ -940,6 +949,7 @@ export const getGeneratedDocumentById = async (req, res) => {
     const { documentId } = req.params;
 
     const document = await GeneratedDocument.findById(documentId)
+      .select("-filePath -s3Key -s3Url -s3Bucket")
       .populate("company")
       .populate("maker", "fname lname")
       .populate("checker", "fname lname")
@@ -984,6 +994,67 @@ export const getGeneratedDocumentFile = async (req, res) => {
     });
   } catch (error) {
     return res.status(500).json({ msg: error.message });
+  }
+};
+
+export const createTenantGeneratedDocument = async (req, res) => {
+  try {
+    const { companyId, documentType, data = {} } = req.body || {};
+    if (!mongoose.Types.ObjectId.isValid(companyId)) return res.status(400).json({ success: false, msg: "Valid companyId is required." });
+    if (!GeneratedDocument.schema.path("documentType").enumValues.includes(documentType)) return res.status(400).json({ success: false, msg: "Unsupported document type." });
+    if (!data || typeof data !== "object" || Array.isArray(data)) return res.status(400).json({ success: false, msg: "Document data must be an object." });
+
+    const company = await Company.findOne({ _id: companyId, ...(await getCompanyScope(req.user)) });
+    if (!company) return res.status(404).json({ success: false, msg: "Company not found in this tenant." });
+    const master = await DocumentMaster.findOne({ company: company._id, documentType }).select("staticData prefillData").lean();
+    const mergedData = { ...(master?.staticData || {}), ...(master?.prefillData || {}), ...data };
+    const bank = ["BANK_INTEREST_CERTIFICATE", "INTEREST_SUBSIDY", "APPENDIX_A", "APPENDIX_B", "APPENDIX_C"].includes(documentType)
+      ? await Bank.findOne({ company: company._id })
+      : null;
+    let buffer;
+    let mimeType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    switch (documentType) {
+      case "COVERING_LETTER": buffer = await generateCoveringWord(company, mergedData); break;
+      case "BANK_INTEREST_CERTIFICATE": buffer = await (await generateBankInterestExcel(company, bank, mergedData)).xlsx.writeBuffer(); mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; break;
+      case "APPENDIX_A": buffer = await (await generateAppendixExcel(mergedData)).xlsx.writeBuffer(); mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; break;
+      case "APPENDIX_B": buffer = await (await generateAppendixBExcel(mergedData)).xlsx.writeBuffer(); mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; break;
+      case "APPENDIX_C": buffer = await (await generateAppendixCExcel(mergedData)).xlsx.writeBuffer(); mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; break;
+      case "POWER_SUBSIDY": buffer = await generatePowerSubsidyWord(company, mergedData); break;
+      case "INTEREST_SUBSIDY": buffer = await generateInterestSubsidyWord(company, bank, mergedData); break;
+      case "DISBURSEMENT_AGREEMENT": buffer = await generateDisbursementAgreementWord(mergedData); break;
+      case "AFFIDAVIT": buffer = await generateAffidavitWord(mergedData); break;
+      case "ELP_FORM": buffer = await (await generateELPExcel(company, mergedData)).xlsx.writeBuffer(); mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; break;
+      case "PRODUCTION_EXTRACT": buffer = await (await generateProductionExcel(mergedData)).xlsx.writeBuffer(); mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; break;
+      default: return res.status(400).json({ success: false, msg: "Unsupported document type." });
+    }
+    if (!buffer) throw new Error("The document generator returned no file.");
+    const extension = mimeType.includes("spreadsheetml") ? "xlsx" : "docx";
+    const fileName = `${documentType}-${Date.now()}.${extension}`;
+    const fileInfo = await storeDocument(buffer, fileName, company._id, mimeType);
+    const document = await GeneratedDocument.create({
+      company: company._id,
+      client: company.client,
+      documentType,
+      fileName,
+      fileSize: fileInfo.fileSize,
+      mimeType,
+      storageType: fileInfo.storageType,
+      filePath: fileInfo.filePath,
+      ...(fileInfo.s3Key ? { s3Key: fileInfo.s3Key } : {}),
+      maker: req.user.id,
+      metadata: mergedData,
+      status: "PENDING_CHECK",
+    });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: document._id, metadata: { documentType, companyId: String(company._id) } });
+    return res.status(201).json({
+      success: true,
+      msg: "Document generated and submitted for checking.",
+      data: { _id: document._id, company: document.company, documentType: document.documentType, fileName: document.fileName, status: document.status, createdAt: document.createdAt },
+    });
+  } catch (error) {
+    console.error("Tenant document generation failed:", error);
+    if (["ValidationError", "CastError"].includes(error.name)) return res.status(400).json({ success: false, msg: "Document details are invalid." });
+    return res.status(500).json({ success: false, msg: "Document generation failed." });
   }
 };
 // ================= ELP FORM =================
@@ -1058,7 +1129,7 @@ export const generateELPForm = async (req, res) => {
     // ================= SAVE =================
 
 
-    await GeneratedDocument.create({
+    const generatedDoc = await GeneratedDocument.create({
   company: companyId,
   metadata: mergedData,
 
@@ -1074,6 +1145,7 @@ export const generateELPForm = async (req, res) => {
 
   status: "PENDING_CHECK",
 });
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_CREATED", resourceType: "GeneratedDocument", resourceId: generatedDoc._id, metadata: { documentType: generatedDoc.documentType, companyId: String(generatedDoc.company) } });
 
     // ================= RESPONSE =================
 
@@ -1438,12 +1510,27 @@ const fileName = `V${
     // ================= SAVE =================
 
     await document.save();
+    await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "DOCUMENT_EDITED", resourceType: "GeneratedDocument", resourceId: document._id, metadata: { version: document.version, status: document.status } });
     if (oldStorageType === "filesystem" && oldFilePath && oldFilePath !== replacementPath) {
       await deleteStoredFile(oldFilePath).catch((cleanupError) => console.error("Old document cleanup failed:", cleanupError.message));
     }
     return res.json({
       msg: "Document edited successfully",
-      document,
+      document: {
+        _id: document._id,
+        company: document.company,
+        documentType: document.documentType,
+        fileName: document.fileName,
+        fileSize: document.fileSize,
+        mimeType: document.mimeType,
+        status: document.status,
+        maker: document.maker,
+        checker: document.checker,
+        approver: document.approver,
+        version: document.version,
+        editLogs: document.editLogs,
+        updatedAt: document.updatedAt,
+      },
     });
   } catch (error) {
     if (replacementPath) await deleteStoredFile(replacementPath).catch(() => {});

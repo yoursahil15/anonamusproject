@@ -4,7 +4,7 @@ import Company from "../models/Company.js";
 import GeneratedDocument from "../models/GeneratedDocument.js";
 import User from "../models/User.js";
 import { getCompanyScope, getOfficeAdminId } from "../utils/officeScope.js";
-import { recordTenantActivity } from "./tenantSupportController.js";
+import { createTenantNotification, recordTenantActivity } from "./tenantSupportController.js";
 
 const pageParams = (query) => {
   const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
@@ -17,6 +17,7 @@ const sendPage = (res, data, total, page, limit) => res.json({
   pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
 });
 const validId = (id) => mongoose.Types.ObjectId.isValid(id);
+const escapeRegex = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 const isAdmin = (req) => req.user?.role === "admin" && Boolean(req.user?.tenantId);
 const companyFields = [
   "nameOfCompany", "pan", "gst", "factoryAddress", "registeredOfficeAddress",
@@ -39,7 +40,7 @@ export const listTenantCompanies = async (req, res) => {
   const scope = await getCompanyScope(req.user);
   const filter = { ...scope };
   if (req.query.search) {
-    const search = String(req.query.search).trim().slice(0, 100);
+    const search = escapeRegex(String(req.query.search).trim().slice(0, 100));
     filter.$and = [
       ...(filter.$and || []),
       { $or: [
@@ -116,7 +117,7 @@ export const listTenantCompanyDocuments = async (req, res) => {
     filter.status = status;
   }
   const [data, total] = await Promise.all([
-    GeneratedDocument.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).populate("maker", "fname lname").lean(),
+    GeneratedDocument.find(filter).select("-filePath -s3Key -s3Url -s3Bucket").sort({ createdAt: -1 }).skip(skip).limit(limit).populate("maker", "fname lname").lean(),
     GeneratedDocument.countDocuments(filter),
   ]);
   return sendPage(res, data, total, page, limit);
@@ -127,6 +128,7 @@ const employeeScope = (req) => ({
   role: { $in: ["manager", "intern"] },
   ...(req.user.role === "manager" ? { $or: [{ _id: req.user.id }, { manager: req.user.id }] } : {}),
   ...(req.user.role === "intern" ? { _id: req.user.id } : {}),
+  ...(!["admin", "manager", "intern"].includes(req.user.role) ? { _id: null } : {}),
 });
 
 export const listTenantEmployees = async (req, res) => {
@@ -142,7 +144,7 @@ export const listTenantEmployees = async (req, res) => {
     filter.isActive = status === "active";
   }
   if (req.query.search) {
-    const search = String(req.query.search).trim().slice(0, 100);
+    const search = escapeRegex(String(req.query.search).trim().slice(0, 100));
     filter.$and = [
       ...(filter.$and || []),
       { $or: ["fname", "lname", "email"].map((field) => ({ [field]: { $regex: search, $options: "i" } })) },
@@ -187,6 +189,8 @@ export const createTenantEmployee = async (req, res) => {
     isVerified: false, isActive: true, isApproved: true,
   });
   await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "EMPLOYEE_CREATED", resourceType: "User", resourceId: created._id, metadata: { role: created.role } });
+  const tenantAdmins = await User.find({ tenantId: req.user.tenantId, role: "admin", isActive: true }).select("_id").lean();
+  await Promise.all(tenantAdmins.map(({ _id }) => createTenantNotification({ tenantId: req.user.tenantId, user: _id, kind: "EMPLOYEE_CREATED", title: "New employee added", message: `${created.fname} ${created.lname} joined the office.`, resourceType: "User", resourceId: created._id })));
   return res.status(201).json({ success: true, msg: "Employee created successfully.", data: safeUser(created) });
 };
 
@@ -257,5 +261,6 @@ export const updateTenantEmployeePermissions = async (req, res) => {
   ).select("_id fname lname role permissions tenantId");
   if (!employee) return res.status(404).json({ success: false, msg: "Employee not found." });
   await recordTenantActivity({ tenantId: req.user.tenantId, actor: req.user.id, action: "EMPLOYEE_PERMISSIONS_CHANGED", resourceType: "User", resourceId: employee._id, metadata: { permissions: employee.permissions } });
+  await createTenantNotification({ tenantId: req.user.tenantId, user: employee._id, kind: "PERMISSIONS_CHANGED", title: "Workflow permissions updated", message: "Your office workflow permissions have changed.", resourceType: "User", resourceId: employee._id });
   return res.json({ success: true, msg: "Workflow permissions updated.", data: employee });
 };
