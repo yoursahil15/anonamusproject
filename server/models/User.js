@@ -158,6 +158,8 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+userSchema.index({ tenantId: 1, role: 1, isActive: 1 });
+
 const User = mongoose.model("User", userSchema);
 
 export default User;

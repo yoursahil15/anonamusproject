@@ -135,4 +135,6 @@ const companySchema = new mongoose.Schema(
   { timestamps: true },
 );
 
+companySchema.index({ tenantId: 1, pan: 1 });
+
 export default mongoose.model("Company", companySchema);

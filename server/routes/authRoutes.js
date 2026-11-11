@@ -9,6 +9,7 @@ import {
 } from "../controllers/authcontroller.js";
 import { authRateLimit } from "../middleware/authRateLimit.js";
 import { saveOnboarding, tenantDashboard } from "../controllers/authcontroller.js";
+import { requireActiveTenant, requireTenantAdmin } from "../middleware/officeWorkflowAccess.js";
 
 const router = express.Router();
 
@@ -28,6 +29,6 @@ router.get("/onboarding", protect, async (req, res) => {
   return res.json({ tenant });
 });
 router.put("/onboarding", protect, saveOnboarding);
-router.get("/tenant-dashboard", protect, tenantDashboard);
+router.get("/tenant-dashboard", protect, requireActiveTenant, requireTenantAdmin, tenantDashboard);
 
 export default router;

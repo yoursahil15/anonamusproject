@@ -13,6 +13,7 @@ import documentRoutes from "./routes/documentRoutes.js";
 import documentMasterRoutes from "./routes/documentMasterRoutes.js";
 import companyDocumentRoutes from "./routes/companyDocumentRoutes.js";
 import uploadRoutes from "./routes/uploadRoutes.js";
+import tenantRoutes from "./routes/tenantRoutes.js";
 
 // =====================================
 // MIDDLEWARE IMPORTS
@@ -79,6 +80,7 @@ app.use(express.urlencoded({ extended: true }));
 // These routes do not use legacyTenantGuard.
 
 app.use("/api/auth", authRoutes);
+app.use("/api/tenant", tenantRoutes);
 
 // =====================================
 // TENANT PROTECTION

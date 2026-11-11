@@ -1466,6 +1466,8 @@ export const checkerAction = async (req, res) => {
   try {
     const { documentId } = req.params;
     const { action, reason } = req.body;
+    if (!["approve", "reject"].includes(action)) return res.status(400).json({ msg: "Action must be approve or reject." });
+    if (action === "reject" && !String(reason || "").trim()) return res.status(400).json({ msg: "A rejection reason is required." });
 
     const document = await GeneratedDocument.findById(documentId);
 
@@ -1481,6 +1483,7 @@ export const checkerAction = async (req, res) => {
         msg: "Document already processed",
       });
     }
+    if (String(document.maker) === String(req.user.id)) return res.status(403).json({ msg: "Makers cannot check their own documents." });
 
     // Save checker name
     document.checker = req.user.id;
@@ -1520,6 +1523,8 @@ export const approverAction = async (req, res) => {
   try {
     const { documentId } = req.params;
     const { action, reason } = req.body;
+    if (!["approve", "reject"].includes(action)) return res.status(400).json({ msg: "Action must be approve or reject." });
+    if (action === "reject" && !String(reason || "").trim()) return res.status(400).json({ msg: "A rejection reason is required." });
 
     const document = await GeneratedDocument.findById(documentId);
 
@@ -1535,6 +1540,7 @@ export const approverAction = async (req, res) => {
         msg: "Document already processed",
       });
     }
+    if (String(document.maker) === String(req.user.id)) return res.status(403).json({ msg: "Makers cannot approve their own documents." });
 
     // Save approver name
     document.approver = req.user.id;
@@ -1548,9 +1554,7 @@ export const approverAction = async (req, res) => {
     if (action === "reject") {
       document.status = "REJECTED_BY_APPROVER";
 
-      document.rejectedReason = reason;
-
-      document.approvedAt = new Date();
+      document.rejectedReason = String(reason).trim();
     }
 
     await document.save();
@@ -1596,13 +1600,22 @@ export const assignApprover = async (req, res) => {
     }
 
     // Only checker allowed
-    if (document.checker.toString() !== req.user.id) {
+    if (String(document.checker || "") !== String(req.user.id)) {
       return res.status(403).json({
         msg: "Not authorized",
       });
     }
 
-    document.approver = approverId;
+    if (!mongoose.Types.ObjectId.isValid(approverId)) return res.status(400).json({ msg: "Invalid approverId" });
+    const approver = await User.findOne({
+      _id: approverId,
+      permissions: "approver",
+      isActive: true,
+      ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}),
+    }).select("_id");
+    if (!approver) return res.status(400).json({ msg: "Select an active approver from your tenant." });
+
+    document.approver = approver._id;
     document.status = "PENDING_APPROVAL";
 
     await document.save();
@@ -1652,7 +1665,15 @@ export const assignChecker = async (req, res) => {
       return res.status(400).json({ msg: "Invalid checkerId" });
     }
 
-    document.checker = new mongoose.Types.ObjectId(checkerId);
+    const checker = await User.findOne({
+      _id: checkerId,
+      permissions: "checker",
+      isActive: true,
+      ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}),
+    }).select("_id");
+    if (!checker) return res.status(400).json({ msg: "Select an active checker from your tenant." });
+
+    document.checker = checker._id;
     document.status = "PENDING_CHECK";
 
     await document.save();

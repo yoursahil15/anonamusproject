@@ -6,18 +6,49 @@ import { getCompanyScope } from "../utils/officeScope.js";
 
 export const requireActiveTenant = async (req, res, next) => {
   try {
-    if (!req.user?.tenantId) return next();
-    const [user, tenant] = await Promise.all([
-      User.findById(req.user.id).select("tenantId role"),
-      Tenant.findOne({ _id: req.user.tenantId, status: "ACTIVE" }).select("_id"),
-    ]);
-    if (!user || String(user.tenantId || "") !== String(req.user.tenantId) || !tenant) {
+    if (!req.user?.id) return res.status(401).json({ msg: "Authentication required." });
+    // JWT claims can be stale. The database is authoritative for role, tenant,
+    // account status, and workflow permissions on every tenant operation.
+    const user = await User.findById(req.user.id).select(
+      "tenantId role permissions isActive accountStatus isApproved isVerified",
+    );
+    if (!user || !user.isActive || user.accountStatus === "INACTIVE" || !user.isApproved || !user.isVerified) {
+      return res.status(403).json({ msg: "Active account access is required." });
+    }
+    if (user.role === "superadmin" && !user.tenantId) {
+      req.user = { ...req.user, role: user.role, permissions: user.permissions || [], tenantId: null };
+      return next();
+    }
+    if (!user.tenantId) return next();
+    const tenant = await Tenant.findOne({ _id: user.tenantId, status: "ACTIVE" }).select("_id");
+    if (!tenant) {
       return res.status(403).json({ msg: "Active tenant membership is required." });
     }
+    req.user = {
+      ...req.user,
+      role: user.role,
+      permissions: user.permissions || [],
+      tenantId: String(user.tenantId),
+    };
     return next();
   } catch {
-    return res.status(403).json({ msg: "Unable to verify tenant membership." });
+    return res.status(500).json({ msg: "Unable to verify tenant membership." });
   }
+};
+
+export const requireTenantAdmin = (req, res, next) => {
+  if (req.user?.role === "admin" && req.user?.tenantId) return next();
+  return res.status(403).json({ msg: "Tenant administrator access is required." });
+};
+
+export const authorizeRole = (...roles) => (req, res, next) => {
+  if (roles.includes(req.user?.role)) return next();
+  return res.status(403).json({ msg: "Your role cannot perform this operation." });
+};
+
+export const authorizePermission = (permission) => (req, res, next) => {
+  if (req.user?.permissions?.includes(permission)) return next();
+  return res.status(403).json({ msg: `The ${permission} workflow permission is required.` });
 };
 
 export const requireMakerPermission = (req, res, next) => {

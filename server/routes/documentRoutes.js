@@ -32,6 +32,7 @@ import {
   requireMakerPermission,
   requireOfficeDocument,
   requireOfficeCompany,
+  authorizePermission,
 } from "../middleware/officeWorkflowAccess.js";
 
 const router = express.Router();
@@ -130,16 +131,16 @@ router.post(
 // ================= WORKFLOW =================
 
 // Assign Checker (ðŸ”¥ MISSING BEFORE â€” NOW ADDED)
-router.put("/assign-checker/:documentId", protect, assignChecker);
+router.put("/assign-checker/:documentId", protect, requireActiveTenant, requireOfficeDocument, requireMakerPermission, assignChecker);
 
 // Checker Action
-router.put("/checker-action/:documentId", protect, checkerAction);
+router.put("/checker-action/:documentId", protect, requireActiveTenant, requireOfficeDocument, authorizePermission("checker"), checkerAction);
 
 // Assign Approver
-router.put("/assign-approver/:documentId", protect, assignApprover);
+router.put("/assign-approver/:documentId", protect, requireActiveTenant, requireOfficeDocument, authorizePermission("checker"), assignApprover);
 
 // Approver Action
-router.put("/approver-action/:documentId", protect, approverAction);
+router.put("/approver-action/:documentId", protect, requireActiveTenant, requireOfficeDocument, authorizePermission("approver"), approverAction);
 
 // Get Approval Documents
 router.get("/approval-documents", protect, getApprovalDocuments);

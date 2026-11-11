@@ -106,6 +106,16 @@ const generatedDocumentSchema = new mongoose.Schema(
     approvedAt: Date,
 
     rejectedReason: String,
+    workflowHistory: [
+      {
+        actor: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+        action: { type: String, required: true, enum: ["SUBMITTED", "CHECKED", "REJECTED_BY_CHECKER", "APPROVED", "REJECTED_BY_APPROVER"] },
+        fromStatus: { type: String },
+        toStatus: { type: String, required: true },
+        remarks: { type: String, trim: true, maxlength: 2000 },
+        at: { type: Date, default: Date.now },
+      },
+    ],
     version: {
   type: Number,
   default: 1,
@@ -147,6 +157,8 @@ editLogs: [
   { timestamps: true },
   
 );
+
+generatedDocumentSchema.index({ company: 1, status: 1, createdAt: -1 });
 
 
 
