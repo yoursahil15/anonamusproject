@@ -36,7 +36,7 @@ export default function Sidebar({
       )}
       <aside
         aria-label="Main navigation"
-        className={`fixed inset-y-0 left-0 z-50 flex h-dvh w-[252px] shrink-0 flex-col border-r border-slate-800 bg-slate-950 text-white transition-[transform,width] duration-200 lg:relative lg:z-auto lg:translate-x-0 ${collapsed ? "lg:w-[76px]" : "lg:w-[252px]"} ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
+        className={`tenant-dashboard-sidebar fixed inset-y-0 left-0 z-50 flex h-dvh w-[252px] shrink-0 flex-col border-r border-slate-800 bg-slate-950 text-white transition-[transform,width] duration-200 lg:relative lg:z-auto lg:translate-x-0 ${collapsed ? "lg:w-[76px]" : "lg:w-[252px]"} ${mobileOpen ? "translate-x-0" : "-translate-x-full"}`}
       >
         <div className={`flex h-[72px] shrink-0 items-center border-b border-white/10 ${collapsed ? "justify-center px-2" : "gap-3 px-4"}`}>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg shadow-blue-950/40">

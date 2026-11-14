@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar";
 import Header from "./Header";
 import { getNavigationItems } from "./navigation";
 import { clearAuthData } from "../../utils/auth";
+import "./tenant-admin.css";
 
 const readStoredUser = () => {
   try {
@@ -27,7 +28,7 @@ export default function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex h-dvh min-h-0 overflow-hidden bg-slate-100 text-slate-900">
+    <div className={`flex h-dvh min-h-0 overflow-hidden bg-slate-100 text-slate-900 ${isTenantAdmin ? "tenant-admin-shell" : ""}`}>
       <Sidebar
         items={navigationItems}
         user={user}

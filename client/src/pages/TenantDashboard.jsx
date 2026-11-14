@@ -561,7 +561,38 @@ export default function TenantDashboard() {
   ];
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="tenant-dashboard-page space-y-6 pb-8">
+      <style>{`
+        .tenant-dashboard-page {
+          --td-page: #ececec; --td-card: #fff; --td-ink: #333; --td-muted: #8a8f94;
+          --td-teal: #14a085; --td-cyan: #2bb3c0; --td-orange: #e8591e;
+          color: var(--td-ink); font-family: Roboto, Arial, sans-serif;
+          padding: 22px; background: var(--td-page); border-radius: 2px;
+        }
+        .tenant-dashboard-page > header { padding: 3px 0 18px; border-bottom: 1px solid #ddd; }
+        .tenant-dashboard-page > header > div:first-child > p:first-child { color: var(--td-orange) !important; letter-spacing: .08em; }
+        .tenant-dashboard-page > header h1 { color: #292929 !important; font-size: 26px; font-weight: 400; }
+        .tenant-dashboard-page > header button { border-radius: 18px; border-color: #ddd; box-shadow: 0 1px 3px #00000012; }
+        .tenant-dashboard-page article { position: relative; min-height: 128px; border: 0; border-radius: 2px; background: #fff; box-shadow: 0 1px 3px #00000014; padding: 18px; }
+        .tenant-dashboard-page article > div > p:first-child { color: var(--td-muted); text-transform: uppercase; letter-spacing: .04em; font-size: 10px; }
+        .tenant-dashboard-page article > div > p:nth-child(2) { font-size: 29px; font-weight: 300; color: var(--td-teal); }
+        .tenant-dashboard-page article > span { border-radius: 50%; background: #e5f5f1 !important; color: var(--td-teal) !important; }
+        .tenant-dashboard-page section { border: 0; border-radius: 2px; background: var(--td-card); box-shadow: 0 1px 3px #00000014; }
+        .tenant-dashboard-page section > div:first-child { border: 0; padding: 17px 20px 12px; }
+        .tenant-dashboard-page section > div:first-child > div:first-child > span { display: none; }
+        .tenant-dashboard-page section h2 { color: #252525; font-size: 12px; font-weight: 700; letter-spacing: .035em; text-transform: uppercase; }
+        .tenant-dashboard-page section h2 + p { color: var(--td-muted); font-size: 11px; }
+        .tenant-dashboard-page a { color: var(--td-teal); }
+        .tenant-dashboard-page input, .tenant-dashboard-page select { border-radius: 3px; border-color: #e6e6e6; }
+        .tenant-dashboard-page table thead { background: #f5f5f5; }
+        .tenant-dashboard-page table th { color: #555; letter-spacing: .04em; }
+        .tenant-dashboard-page tbody tr:hover { background: #f8fbfa; }
+        .tenant-dashboard-page .text-blue-700, .tenant-dashboard-page .text-blue-600 { color: var(--td-teal) !important; }
+        .tenant-dashboard-page .bg-blue-600 { background: var(--td-teal) !important; }
+        .tenant-dashboard-page .bg-blue-50 { background: #e6f5f1 !important; }
+        .tenant-dashboard-page .border-slate-100, .tenant-dashboard-page .border-slate-200 { border-color: #e8e8e8 !important; }
+        @media (max-width: 640px) { .tenant-dashboard-page { padding: 14px; } }
+      `}</style>
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">

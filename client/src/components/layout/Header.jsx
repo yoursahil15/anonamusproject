@@ -75,7 +75,7 @@ export default function Header({ items = [], user: providedUser, onMenuClick }) 
 
   return (
     <>
-      <header className="sticky top-0 z-30 flex h-[68px] shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
+      <header className="tenant-dashboard-header sticky top-0 z-30 flex h-[68px] shrink-0 items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6">
         <div className="flex min-w-0 items-center gap-3">
           <button type="button" onClick={onMenuClick} aria-label="Open navigation" className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 lg:hidden">
             <Menu size={18} />
@@ -140,7 +140,7 @@ export default function Header({ items = [], user: providedUser, onMenuClick }) 
         </div>
       </header>
 
-      <div className="shrink-0 border-b border-slate-200 bg-white px-5 py-3 sm:px-7">
+      <div className="tenant-dashboard-title-strip shrink-0 border-b border-slate-200 bg-white px-5 py-3 sm:px-7">
         <h1 className="text-base font-semibold text-slate-900">{title}</h1>
         <nav aria-label="Breadcrumb" className="mt-1">
           <ol className="flex flex-wrap items-center gap-1 text-[11px] text-slate-500">

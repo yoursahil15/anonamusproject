@@ -1,0 +1,65 @@
+/* Tenant workspace theme shared by every page reached from its sidebar. */
+.tenant-admin-shell {
+  --td-page: #ececec;
+  --td-card: #fff;
+  --td-ink: #333;
+  --td-muted: #8a8f94;
+  --td-teal: #14a085;
+  --td-cyan: #2bb3c0;
+  --td-orange: #e8591e;
+  background: var(--td-page) !important;
+  color: var(--td-ink);
+  font-family: Roboto, Arial, sans-serif;
+}
+.tenant-admin-shell main { background: var(--td-page); }
+.tenant-admin-shell .tenant-dashboard-sidebar { background: #1f2326 !important; border-color: #171a1c !important; }
+.tenant-admin-shell .tenant-dashboard-sidebar > div:first-child { background: #181b1d; border-color: #303437; }
+.tenant-admin-shell .tenant-dashboard-sidebar > div:first-child > div:first-child { border-radius: 2px; background: linear-gradient(135deg, #e8591e 0 48%, #14a085 49% 100%) !important; box-shadow: none; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav { padding: 14px 8px; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav > div { margin-bottom: 17px; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav > div > p { color: #e8591e !important; letter-spacing: .1em; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav > div > div { gap: 0; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav a,
+.tenant-admin-shell .tenant-dashboard-sidebar nav button { min-height: 38px; border-radius: 2px; border-bottom: 1px solid #303437; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav a[aria-current="page"] { background: #34393c !important; color: #fff !important; box-shadow: none !important; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav a[aria-current="page"] > span:first-child { background: #2bb3c0 !important; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav a svg,
+.tenant-admin-shell .tenant-dashboard-sidebar nav button svg { color: #aeb4b7 !important; }
+.tenant-admin-shell .tenant-dashboard-sidebar nav a[aria-current="page"] svg { color: #fff !important; }
+.tenant-admin-shell .tenant-dashboard-sidebar > div:last-child { border-color: #34393c; }
+.tenant-admin-shell .tenant-dashboard-sidebar > div:last-child > div { border-radius: 2px; background: #181b1d; }
+.tenant-admin-shell .tenant-dashboard-sidebar > div:last-child > div > div:first-child { border-radius: 50%; background: #14a085 !important; }
+.tenant-admin-shell .tenant-dashboard-header { height: 70px; background: #fff; border-color: #e6e6e6; box-shadow: 0 1px 3px #0000000d; }
+.tenant-admin-shell .tenant-dashboard-header > div:first-child > div:first-child { border-radius: 2px; background: #14a085 !important; box-shadow: none; }
+.tenant-admin-shell .tenant-dashboard-header input { border: 0; border-radius: 999px; background: #efefef; }
+.tenant-admin-shell .tenant-dashboard-header input:focus { background: #efefef; box-shadow: 0 0 0 2px #14a08522; }
+.tenant-admin-shell .tenant-dashboard-header button { border-radius: 50%; }
+.tenant-admin-shell .tenant-dashboard-header [aria-haspopup="menu"] { border-radius: 999px; }
+.tenant-admin-shell .tenant-dashboard-header [aria-haspopup="menu"] > span:first-child { border-radius: 50%; background: #14a085 !important; }
+.tenant-admin-shell .tenant-dashboard-title-strip { background: #fff; border-color: #e6e6e6; }
+.tenant-admin-shell .tenant-dashboard-title-strip h1 { color: #e8591e; font-size: 13px; letter-spacing: .07em; text-transform: uppercase; }
+.tenant-admin-shell .tenant-dashboard-title-strip nav li:last-child { color: #e8591e; }
+
+/* Carry the same restrained card, border, and accent colors into tenant pages. */
+.tenant-admin-shell main section,
+.tenant-admin-shell main article {
+  border-color: #e6e6e6;
+  border-radius: 2px;
+  background-color: var(--td-card);
+  box-shadow: 0 1px 3px #00000014;
+}
+.tenant-admin-shell main a { color: var(--td-teal); }
+.tenant-admin-shell main input,
+.tenant-admin-shell main select,
+.tenant-admin-shell main textarea { border-color: #e6e6e6; border-radius: 3px; }
+.tenant-admin-shell main table thead { background-color: #f5f5f5; }
+.tenant-admin-shell main table th { color: #555; letter-spacing: .04em; }
+.tenant-admin-shell main .text-blue-700,
+.tenant-admin-shell main .text-blue-600 { color: var(--td-teal) !important; }
+.tenant-admin-shell main .bg-blue-600 { background-color: var(--td-teal) !important; }
+.tenant-admin-shell main .bg-blue-50 { background-color: #e6f5f1 !important; }
+.tenant-admin-shell main .border-slate-100,
+.tenant-admin-shell main .border-slate-200 { border-color: #e8e8e8 !important; }
+@media (max-width: 640px) {
+  .tenant-admin-shell main { padding: 14px; }
+}
