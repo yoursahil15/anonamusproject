@@ -4,23 +4,16 @@ import API from "../services/api";
 import { clearAuthData, getUserLandingPath } from "../utils/auth";
 import {
   AlertCircle,
-  ArrowRight,
-  CheckCircle2,
-  FileText,
   Eye,
   EyeOff,
+  KeyRound,
   Loader2,
-  Lock,
   Mail,
-  ShieldCheck,
 } from "lucide-react";
 
 /* =========================================================
    LOGIN
 ========================================================= */
-
-const fieldClass =
-  "h-9 w-full rounded-lg border border-slate-300 bg-white pl-9 text-sm text-slate-900 placeholder:text-slate-400 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50";
 
 export default function Login() {
   const [authenticatedPath] = useState(() => {
@@ -131,283 +124,58 @@ export default function Login() {
   };
 
   return (
-    <div className="h-dvh overflow-hidden bg-[#f4f7fc] text-slate-900 lg:grid lg:grid-cols-[1.02fr_0.98fr]">
-      {/* BRAND SIDE */}
-      <aside className="relative hidden h-dvh min-h-0 overflow-hidden bg-[#101d3a] text-white lg:flex lg:flex-col">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_18%_12%,rgba(61,122,255,0.28),transparent_38%),radial-gradient(ellipse_at_90%_88%,rgba(38,91,196,0.38),transparent_42%)]" />
-        <div className="absolute -right-28 top-24 h-80 w-80 rounded-full border border-white/10" />
-        <div className="absolute -right-16 top-36 h-56 w-56 rounded-full border border-white/10" />
-        <div className="absolute bottom-[-150px] left-[-110px] h-[360px] w-[360px] rounded-full border border-white/[0.08]" />
-        <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(rgba(255,255,255,.6)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.6)_1px,transparent_1px)] [background-size:38px_38px]" />
-
-        <div className="relative z-10 flex shrink-0 items-center gap-3 px-8 pt-5 xl:px-10">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10 shadow-lg shadow-black/10">
-            <ShieldCheck size={22} strokeWidth={1.8} />
-          </span>
-          <div>
-            <p className="text-[15px] font-semibold tracking-wide">CA Portal</p>
-            <p className="mt-0.5 text-xs text-blue-100/65">
-              Document workspace
-            </p>
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#d5d5d5] px-4 py-8 sm:px-8">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-70" style={{ background: "radial-gradient(ellipse at 12% 84%, #8a8a8a 0 10%, transparent 36%), radial-gradient(ellipse at 90% 72%, #969696 0 14%, transparent 40%), linear-gradient(170deg, #dedede 0 57%, #bcbcbc 58%, #d3d3d3 70%, #a5a5a5 71%, #d0d0d0 83%)" }} />
+      <section className="relative grid w-full max-w-[920px] overflow-hidden shadow-2xl md:min-h-[570px] md:grid-cols-2">
+        <aside className="relative flex min-h-64 items-end overflow-hidden bg-gradient-to-br from-sky-500 via-cyan-700 to-sky-950 px-8 py-10 text-white sm:px-10 md:min-h-0">
+          <div aria-hidden="true" className="absolute inset-0 opacity-80" style={{ background: "linear-gradient(180deg, #91d8ed55, transparent 42%), radial-gradient(ellipse at 72% 20%, #d7f5ff55, transparent 35%)" }} />
+          <svg aria-hidden="true" viewBox="0 0 700 500" preserveAspectRatio="xMidYMid slice" className="absolute inset-0 h-full w-full">
+            <path d="M0 170 95 110 150 140 245 65 318 124 405 48 495 118 575 54 700 120V500H0Z" fill="#2f91b7" opacity=".55" />
+            <path d="m0 240 100-65 72 42 105-88 83 61 92-81 97 78 81-56 70 45V500H0Z" fill="#08749d" opacity=".72" />
+            <path d="m0 315 95-72 78 40 93-58 97 76 97-82 84 68 77-58 79 48V500H0Z" fill="#07577e" opacity=".86" />
+            <path d="m0 386 109-50 77 39 96-54 93 57 100-63 83 54 70-40 72 45v126H0Z" fill="#063f64" />
+          </svg>
+          <div className="relative z-10 max-w-sm">
+            <h1 className="text-3xl font-light sm:text-4xl">Don’t have an account?</h1>
+            <p className="mt-3 text-sm leading-6 text-white/90">Create an account to get started with your secure document workspace.</p>
+            <a href="/register" className="mt-5 inline-flex rounded-sm border border-white/50 bg-white/15 px-5 py-2.5 text-sm font-semibold uppercase text-white transition hover:bg-white/25">Register now</a>
           </div>
-        </div>
+        </aside>
 
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col justify-center overflow-hidden px-8 py-4 xl:px-14">
-          <div className="max-w-xl">
-            <h1 className="max-w-lg text-3xl font-semibold leading-[1.08] tracking-tight xl:text-[42px]">
-              Every document.
-              <span className="mt-1 block text-blue-300">
-                One clear workflow.
-              </span>
-            </h1>
-            <p className="mt-3 max-w-md text-[13px] leading-5 text-slate-300">
-              Prepare, review, and manage your office documents in one secure
-              workspace.
-            </p>
+        <section className="flex flex-col bg-[#1B2223] px-7 py-8 sm:px-12 sm:py-10">
+          <div className="mx-auto inline-flex items-center gap-2 text-base font-medium text-white/75">
+            <span className="relative inline-block h-4 w-4 bg-[#14a085] before:absolute before:-right-1 before:-top-1 before:h-3 before:w-2 before:bg-[#e8591e]" />
+            CA Portal
           </div>
+          <h2 className="mt-8 text-center text-lg font-medium text-[#2bb3c0]">Login to your account</h2>
+          <p className="mt-2 text-center text-xs text-slate-400">Sign in to continue to your workspace.</p>
 
-          {/* Original, inline workflow illustration — no external image dependency */}
-          <div className="relative mt-5 max-w-[470px] rounded-2xl border border-white/10 bg-white/[0.055] p-4 shadow-2xl shadow-black/20 backdrop-blur-sm xl:mt-6">
-            <div className="mb-3 flex items-center justify-between">
-              <div>
-                <p className="text-xs font-medium text-white/90">
-                  Workspace overview
-                </p>
-                <p className="mt-1 text-[11px] text-blue-100/55">
-                  Document approval workflow
-                </p>
-              </div>
-              <span className="rounded-lg border border-emerald-300/20 bg-emerald-300/10 px-2.5 py-1 text-[10px] font-medium text-emerald-200">
-                Live workflow
-              </span>
-            </div>
-            <div className="grid grid-cols-[1.1fr_0.9fr] gap-3">
-              <div className="rounded-xl border border-white/10 bg-[#f8fbff] p-3 text-slate-800 shadow-xl shadow-black/10">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                    <FileText size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold">Document review</p>
-                    <p className="mt-0.5 text-[9px] text-slate-500">
-                      CA / Client records
-                    </p>
-                  </div>
-                </div>
-                <div className="mt-3 space-y-2">
-                  <div className="h-2 w-[82%] rounded-full bg-slate-200" />
-                  <div className="h-2 w-full rounded-full bg-slate-100" />
-                  <div className="h-2 w-[68%] rounded-full bg-slate-100" />
-                </div>
-                <div className="mt-3 flex items-center justify-between rounded-lg bg-emerald-50 px-2.5 py-1.5">
-                  <span className="text-[10px] font-medium text-emerald-800">
-                    Verified
-                  </span>
-                  <CheckCircle2 size={15} className="text-emerald-600" />
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="rounded-xl border border-white/10 bg-white/[0.07] p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-blue-100/70">
-                      Review stages
-                    </span>
-                    <ShieldCheck size={15} className="text-blue-200" />
-                  </div>
-                  <div className="mt-2 flex items-center gap-1.5">
-                    <span className="h-2 flex-1 rounded-full bg-emerald-400" />
-                    <span className="h-2 flex-1 rounded-full bg-emerald-400" />
-                    <span className="h-2 flex-1 rounded-full bg-blue-300/40" />
-                  </div>
-                  <p className="mt-2 text-[10px] font-medium text-white">
-                    Maker → Checker → Approver
-                  </p>
-                </div>
-                <div className="flex-1 rounded-xl border border-white/10 bg-gradient-to-br from-blue-500/20 to-indigo-400/10 p-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-300/15 text-blue-100">
-                    <Lock size={16} />
-                  </div>
-                  <p className="mt-2 text-[11px] font-semibold text-white">
-                    Access protected
-                  </p>
-                  <p className="mt-1 text-[9px] leading-3.5 text-blue-100/65">
-                    Your workspace stays organized and secure.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center gap-2 text-[10px] text-blue-100/60">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />A
-              simpler way to keep work moving.
-            </div>
-          </div>
-        </div>
-        <div className="relative z-10 flex shrink-0 items-center justify-between px-8 pb-3 text-[10px] text-blue-100/45 xl:px-10">
-          <span>CA Portal · Secure document workspace</span>
-          <span>© {new Date().getFullYear()}</span>
-        </div>
-      </aside>
-
-      {/* LOGIN SIDE */}
-      <main className="flex h-dvh min-h-0 min-w-0 flex-col overflow-hidden bg-[#f7f9fd]">
-        <header className="flex shrink-0 items-center gap-2.5 border-b border-slate-200/70 bg-white/80 px-4 py-2.5 backdrop-blur lg:hidden">
-          <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white">
-            <ShieldCheck size={19} />
-          </span>
-          <div>
-            <p className="text-sm font-semibold text-slate-900">CA Portal</p>
-            <p className="text-[11px] text-slate-500">Document workspace</p>
-          </div>
-        </header>
-        <div className="flex min-h-0 flex-1 items-center justify-center overflow-y-auto px-4 py-3 sm:px-6">
-          <div className="w-full max-w-[360px]">
-            <div className="mb-3">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md shadow-blue-600/20">
-                <ShieldCheck size={24} />
-              </div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-700">
-                Welcome back
-              </p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950">
-                Sign in to your workspace
-              </h2>
-              <p className="mt-1 text-[13px] leading-5 text-slate-500">
-                Use your account credentials to continue.
-              </p>
-            </div>
-
-            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_24px_rgba(15,23,42,0.05)] sm:p-5">
-              {error && (
-                <div
-                  role="alert"
-                  className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700"
-                >
-                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-              <form onSubmit={handleSubmit} className="space-y-3">
-                <div>
-                  <label
-                    htmlFor="email"
-                    className="block text-xs font-semibold text-slate-700"
-                  >
-                    Email address
-                  </label>
-                  <div className="relative mt-1">
-                    <Mail
-                      size={16}
-                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      id="email"
-                      type="email"
-                      name="email"
-                      autoComplete="email"
-                      autoFocus
-                      placeholder="name@company.com"
-                      value={form.email}
-                      onChange={handleChange}
-                      disabled={loading}
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50/70 pl-10 pr-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:opacity-60"
-                      required
-                    />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between gap-3">
-                    <label
-                      htmlFor="password"
-                      className="block text-xs font-semibold text-slate-700"
-                    >
-                      Password
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => navigate("/forgot-password")}
-                      className="text-xs font-semibold text-blue-700 transition hover:text-blue-800 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                    >
-                      Forgot password?
-                    </button>
-                  </div>
-                  <div className="relative mt-1">
-                    <Lock
-                      size={16}
-                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-                    />
-                    <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      name="password"
-                      autoComplete="current-password"
-                      placeholder="Enter your password"
-                      value={form.password}
-                      onChange={handleChange}
-                      onKeyUp={handlePasswordKey}
-                      onKeyDown={handlePasswordKey}
-                      onBlur={() => setCapsLock(false)}
-                      disabled={loading}
-                      className="h-10 w-full rounded-lg border border-slate-200 bg-slate-50/70 pl-10 pr-11 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10 disabled:cursor-not-allowed disabled:opacity-60"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword((visible) => !visible)}
-                      aria-label={
-                        showPassword ? "Hide password" : "Show password"
-                      }
-                      aria-pressed={showPassword}
-                      className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-                    >
-                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                    </button>
-                  </div>
-                  {capsLock && (
-                    <p
-                      role="status"
-                      className="mt-1.5 flex items-center gap-1.5 text-[11px] font-medium text-amber-700"
-                    >
-                      <AlertCircle size={12} />
-                      Caps Lock is on
-                    </p>
-                  )}
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-700 text-sm font-semibold text-white shadow-md shadow-blue-600/20 transition hover:bg-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />
-                      Signing in...
-                    </>
-                  ) : (
-                    <>
-                      Sign in <ArrowRight size={16} />
-                    </>
-                  )}
+          <div className="mx-auto mt-7 w-full max-w-[360px]">
+            {error && <div role="alert" className="mb-4 flex items-start gap-2 rounded-sm border border-rose-400/30 bg-rose-400/10 px-3 py-2.5 text-xs text-rose-200"><AlertCircle size={14} className="mt-0.5 shrink-0" /><span>{error}</span></div>}
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <label className="flex overflow-hidden rounded-sm bg-[#454c4d] focus-within:ring-2 focus-within:ring-[#2bb3c0]">
+                <span className="flex w-14 shrink-0 items-center justify-center border-r border-white/15 text-slate-300"><Mail size={15} /></span>
+                <input id="email" type="email" name="email" autoComplete="email" autoFocus placeholder="Email address" value={form.email} onChange={handleChange} disabled={loading} className="min-w-0 flex-1 bg-transparent px-4 py-4 text-sm text-white outline-none placeholder:text-slate-400 focus:bg-white/[0.03] disabled:opacity-60" required />
+              </label>
+              <label className="flex overflow-hidden rounded-sm bg-[#454c4d] focus-within:ring-2 focus-within:ring-[#2bb3c0]">
+                <span className="flex w-14 shrink-0 items-center justify-center border-r border-white/15 text-slate-300"><KeyRound size={15} /></span>
+                <input id="password" type={showPassword ? "text" : "password"} name="password" autoComplete="current-password" placeholder="Password" value={form.password} onChange={handleChange} onKeyUp={handlePasswordKey} onKeyDown={handlePasswordKey} onBlur={() => setCapsLock(false)} disabled={loading} className="min-w-0 flex-1 bg-transparent px-4 py-4 text-sm text-white outline-none placeholder:text-slate-400 focus:bg-white/[0.03] disabled:opacity-60" required />
+                <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword} className="px-3 text-slate-300 hover:text-white">{showPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
+              </label>
+              {capsLock && <p role="status" className="flex items-center gap-1.5 text-[11px] font-medium text-amber-300"><AlertCircle size={12} />Caps Lock is on</p>}
+              <div className="flex items-center justify-between gap-3 pt-1">
+                <button type="button" onClick={() => navigate("/forgot-password")} className="text-xs font-medium text-slate-200 transition hover:text-[#2bb3c0] hover:underline">Forgot Password?</button>
+                <button type="submit" disabled={loading} className="inline-flex min-w-24 items-center justify-center gap-2 rounded-sm bg-[#2bb3c0] px-5 py-3 text-sm font-semibold uppercase text-white transition hover:bg-[#239eaa] disabled:cursor-not-allowed disabled:opacity-70">
+                  {loading ? <><Loader2 size={15} className="animate-spin" />Signing in</> : "Login"}
                 </button>
-              </form>
-              <p className="mt-4 text-center text-xs text-slate-500">New to CA Portal? <a className="font-semibold text-blue-700" href="/register">Create a firm account</a></p>
-              <div className="my-3 flex items-center gap-3">
-                <span className="h-px flex-1 bg-slate-100" />
-                <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
-                  Secure access
-                </span>
-                <span className="h-px flex-1 bg-slate-100" />
               </div>
-              <p className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500">
-                <Lock size={12} className="text-emerald-600" />
-                Protected sign-in for your document workspace
-              </p>
-            </div>
-            <p className="mt-3 text-center text-[10px] text-slate-400">
-              © {new Date().getFullYear()} CA Portal. All rights reserved.
-            </p>
+            </form>
+            <div className="my-7 flex items-center gap-3"><span className="h-px flex-1 border-t border-dotted border-slate-500" /><span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">Secure login</span><span className="h-px flex-1 border-t border-dotted border-slate-500" /></div>
+            <p className="text-center text-xs leading-5 text-slate-400">Protected sign-in for your document workspace.</p>
           </div>
-        </div>
-      </main>
-    </div>
+          <p className="mt-auto pt-8 text-center text-xs text-slate-400">CA Portal · Secure document workspace</p>
+        </section>
+      </section>
+    </main>
   );
 }

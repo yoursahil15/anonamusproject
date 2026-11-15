@@ -21,14 +21,13 @@ export default function DashboardLayout({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navigationItems = useMemo(() => getNavigationItems(user), [user]);
-  const isTenantAdmin = Boolean(user?.tenantId && user.role === "admin");
   const logout = () => {
     clearAuthData();
     navigate("/", { replace: true });
   };
 
   return (
-    <div className={`flex h-dvh min-h-0 overflow-hidden bg-slate-100 text-slate-900 ${isTenantAdmin ? "tenant-admin-shell" : ""}`}>
+    <div className="tenant-admin-shell flex h-dvh min-h-0 overflow-hidden bg-slate-100 text-slate-900">
       <Sidebar
         items={navigationItems}
         user={user}
@@ -40,7 +39,7 @@ export default function DashboardLayout({ children }) {
       />
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         <Header items={navigationItems} user={user} onMenuClick={() => setMobileOpen(true)} />
-        <main className={`min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 ${isTenantAdmin ? "scrollbar-hidden" : ""}`}>
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-7 scrollbar-hidden">
           <div className="mx-auto w-full max-w-[1600px]">
             {children}
             <Outlet />

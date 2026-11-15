@@ -123,6 +123,14 @@ export default function Profile() {
   };
 
   const initials = `${formData.fname.charAt(0)}${formData.lname.charAt(0)}`.toUpperCase() || "U";
+  const displayName = `${formData.fname} ${formData.lname}`.trim() || "Portal User";
+  let roleLabel = "Team member";
+  try {
+    const currentUser = JSON.parse(localStorage.getItem("user") || "null");
+    roleLabel = String(currentUser?.role || "Team member").replace(/[-_]/g, " ");
+  } catch {
+    // Keep the profile page usable if stored user data is malformed.
+  }
 
   return (
     <div className="min-h-full">
@@ -139,6 +147,42 @@ export default function Profile() {
             <ShieldCheck size={15} /> Profile &amp; security
           </div>
         </header>
+
+        <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]">
+          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="relative flex min-h-36 items-end bg-gradient-to-r from-slate-800 via-slate-700 to-teal-700 px-5 py-5 sm:min-h-44 sm:px-7">
+              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "radial-gradient(circle at 18% 30%, white 0, transparent 34%), radial-gradient(circle at 80% 80%, #5eead4 0, transparent 38%)" }} />
+              <div className="relative flex w-full flex-wrap items-end justify-between gap-4">
+                <div className="flex items-end gap-4">
+                  <div className="flex h-20 w-20 shrink-0 translate-y-9 items-center justify-center rounded-full border-4 border-white bg-teal-600 text-2xl font-semibold text-white shadow-md sm:h-24 sm:w-24 sm:text-3xl">
+                    {initials}
+                  </div>
+                  <div className="pb-1 text-white">
+                    <h2 className="text-xl font-semibold sm:text-2xl">{displayName}</h2>
+                    <p className="mt-1 text-sm capitalize text-white/80">{roleLabel}</p>
+                  </div>
+                </div>
+                <span className="mb-1 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-medium capitalize text-white">{roleLabel}</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-x-8 gap-y-2 px-5 pb-4 pt-11 text-sm sm:px-7">
+              <div><p className="font-medium text-slate-800">{formData.email || "—"}</p><p className="text-xs text-slate-500">Email address</p></div>
+              <div><p className="font-medium text-slate-800">{formData.mobile || "—"}</p><p className="text-xs text-slate-500">Mobile number</p></div>
+            </div>
+          </section>
+
+          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-100 px-4 py-3">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-800">About Me</h2>
+            </div>
+            <dl className="space-y-4 p-4 text-sm">
+              <div><dt className="text-xs text-slate-500">Full name</dt><dd className="mt-1 font-medium text-slate-800">{displayName}</dd></div>
+              <div><dt className="text-xs text-slate-500">Account role</dt><dd className="mt-1 font-medium capitalize text-teal-700">{roleLabel}</dd></div>
+              <div><dt className="text-xs text-slate-500">Email address</dt><dd className="mt-1 break-all font-medium text-slate-800">{formData.email || "Not provided"}</dd></div>
+              <div><dt className="text-xs text-slate-500">Mobile number</dt><dd className="mt-1 font-medium text-slate-800">{formData.mobile || "Not provided"}</dd></div>
+            </dl>
+          </section>
+        </div>
 
 
         {successMessage && (
@@ -205,10 +249,10 @@ export default function Profile() {
           </section>
 
           <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-3 sm:flex-row sm:items-center sm:justify-end">
-            <button type="button" onClick={resetForm} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="button" onClick={resetForm} disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-sm border border-[#14a085] bg-white px-3.5 py-2 text-sm font-semibold text-[#14a085] transition hover:bg-[#e6f5f1] disabled:cursor-not-allowed disabled:opacity-60">
               Reset changes
             </button>
-            <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-4 focus:ring-blue-500/20 disabled:cursor-not-allowed disabled:opacity-60">
+            <button type="submit" disabled={loading} className="inline-flex items-center justify-center gap-2 rounded-sm bg-[#14a085] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#118a73] focus:outline-none focus:ring-4 focus:ring-[#14a085]/20 disabled:cursor-not-allowed disabled:opacity-60">
               {loading ? <RefreshCw size={16} className="animate-spin" /> : <Save size={16} />}
               {loading ? "Saving changes..." : "Save changes"}
             </button>
