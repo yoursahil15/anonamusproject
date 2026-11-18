@@ -190,7 +190,7 @@ export default function VerifyOtp() {
         </form>
 
         <p className="mt-4 text-center text-[11px] text-slate-400">
-          Secure verification for your CA Portal account
+          Secure verification for your Cashflow account
         </p>
       </section>
     </main>

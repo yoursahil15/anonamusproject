@@ -84,7 +84,7 @@ export default function Header({ items = [], user: providedUser, onMenuClick }) 
             <ShieldCheck size={19} />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold leading-tight text-slate-900">CA Portal</p>
+            <p className="truncate text-sm font-bold leading-tight text-slate-900">Cashflow</p>
             <p className="hidden truncate text-[11px] text-slate-500 sm:block">Document workspace</p>
           </div>
         </div>

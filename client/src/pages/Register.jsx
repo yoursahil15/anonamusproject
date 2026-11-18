@@ -52,9 +52,9 @@ export default function Register() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-70" style={{ background: "radial-gradient(ellipse at 12% 84%, #8a8a8a 0 10%, transparent 36%), radial-gradient(ellipse at 90% 72%, #969696 0 14%, transparent 40%), linear-gradient(170deg, #dedede 0 57%, #bcbcbc 58%, #d3d3d3 70%, #a5a5a5 71%, #d0d0d0 83%)" }} />
       <section className="relative grid w-full max-w-[920px] overflow-hidden shadow-2xl md:min-h-[570px] md:grid-cols-2">
         <div className="flex flex-col bg-[#1B2223] px-7 py-8 sm:px-12 sm:py-10">
-          <Link to="/" className="mx-auto inline-flex items-center gap-2 text-base font-medium text-white/75" aria-label="CA Portal home">
+          <Link to="/" className="mx-auto inline-flex items-center gap-2 text-base font-medium text-white/75" aria-label="Cashflow home">
             <span className="relative inline-block h-4 w-4 bg-[#14a085] before:absolute before:-right-1 before:-top-1 before:h-3 before:w-2 before:bg-[#e8591e]" />
-            CA Portal
+            Cashflow
           </Link>
           <h1 className="mt-8 text-center text-lg font-medium text-[#2bb3c0]">Create your account</h1>
           <p className="mt-2 text-center text-xs leading-5 text-slate-400">Start with your account. You can add firm details after verifying your email.</p>
@@ -81,7 +81,7 @@ export default function Register() {
               <button disabled={busy} className="w-full rounded-sm bg-[#2bb3c0] px-5 py-4 text-sm font-semibold uppercase text-white transition hover:bg-[#239eaa] disabled:opacity-60">{busy ? "Creating account…" : "Register"}</button>
             </form>
           )}
-          <p className="mt-auto pt-8 text-center text-xs text-slate-400">CA Portal · Secure account registration</p>
+          <p className="mt-auto pt-8 text-center text-xs text-slate-400">Cashflow · Secure account registration</p>
         </div>
 
         <div className="relative flex min-h-64 items-end overflow-hidden bg-gradient-to-br from-sky-500 via-cyan-700 to-sky-950 px-8 py-10 sm:px-10 md:min-h-0">

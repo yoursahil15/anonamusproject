@@ -53,7 +53,7 @@ export default function ResetPassword() {
         <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(ellipse_at_15%_12%,rgba(61,122,255,0.25),transparent_40%),radial-gradient(ellipse_at_92%_85%,rgba(38,91,196,0.28),transparent_42%)]" />
         <div className="relative z-10 flex items-center gap-3 px-8 pt-7">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/15 bg-white/10"><ShieldCheck size={21} /></span>
-          <div><p className="text-sm font-semibold">CA Portal</p><p className="text-[11px] text-blue-100/60">Document workspace</p></div>
+          <div><p className="text-sm font-semibold">Cashflow</p><p className="text-[11px] text-blue-100/60">Document workspace</p></div>
         </div>
         <div className="relative z-10 px-8 py-8 xl:px-10">
           <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-300/15 text-blue-100"><LockKeyhole size={23} /></div>
@@ -64,14 +64,14 @@ export default function ResetPassword() {
             <div><p className="text-xs font-semibold">Protected account access</p><p className="mt-0.5 text-[11px] text-blue-100/60">Your credentials stay private.</p></div>
           </div>
         </div>
-        <div className="relative z-10 flex justify-between px-8 pb-5 text-[10px] text-blue-100/40"><span>CA Portal</span><span>© {new Date().getFullYear()}</span></div>
+        <div className="relative z-10 flex justify-between px-8 pb-5 text-[10px] text-blue-100/40"><span>Cashflow</span><span>© {new Date().getFullYear()}</span></div>
       </aside>
 
       {/* Reset form */}
       <main className="flex min-h-dvh min-w-0 flex-col bg-[#f7f9fd]">
         <header className="flex items-center gap-2 border-b border-slate-200/70 bg-white px-4 py-2.5 lg:hidden">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white"><ShieldCheck size={17} /></span>
-          <span className="text-sm font-semibold">CA Portal</span>
+          <span className="text-sm font-semibold">Cashflow</span>
         </header>
 
         <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-8">
@@ -117,7 +117,7 @@ export default function ResetPassword() {
 
               <div className="mt-4 flex items-start gap-2 border-t border-slate-100 pt-3"><ShieldCheck size={14} className="mt-0.5 shrink-0 text-emerald-600" /><p className="text-[11px] leading-4 text-slate-500">Never share your OTP or password with anyone.</p></div>
             </div>
-            <p className="mt-4 text-center text-[10px] text-slate-400">© {new Date().getFullYear()} CA Document Management System</p>
+            <p className="mt-4 text-center text-[10px] text-slate-400">© {new Date().getFullYear()} Cashflow</p>
           </div>
         </div>
       </main>

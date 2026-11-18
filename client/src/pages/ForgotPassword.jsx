@@ -58,7 +58,7 @@ export default function ForgotPassword() {
         <section className="flex flex-col bg-[#1B2223] px-7 py-8 sm:px-12 sm:py-10">
           <div className="mx-auto inline-flex items-center gap-2 text-base font-medium text-white/75">
             <span className="relative inline-block h-4 w-4 bg-[#14a085] before:absolute before:-right-1 before:-top-1 before:h-3 before:w-2 before:bg-[#e8591e]" />
-            CA Portal
+            Cashflow
           </div>
           <h2 className="mt-8 text-center text-lg font-medium text-[#2bb3c0]">Forgot Password?</h2>
           <p className="mx-auto mt-2 max-w-xs text-center text-xs leading-5 text-slate-200">Don’t worry, we’ll send you an email to reset your password.</p>
@@ -76,7 +76,7 @@ export default function ForgotPassword() {
               </button>
             </form>
           </div>
-          <p className="mt-auto pt-8 text-center text-xs text-slate-400">CA Portal · Secure account recovery</p>
+          <p className="mt-auto pt-8 text-center text-xs text-slate-400">Cashflow · Secure account recovery</p>
         </section>
       </section>
     </main>
