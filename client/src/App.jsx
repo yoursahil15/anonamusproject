@@ -255,6 +255,7 @@ function App() {
               <RoleProtectedRoute
                 allowedRoles={["superadmin"]}
                 allowedPermissions={["maker"]}
+                allowTenantAdmin
               >
                 <Layout>
                   <GenerateDocument />
