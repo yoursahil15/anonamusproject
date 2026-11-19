@@ -83,6 +83,11 @@ export const requireOfficeCompany = async (req, res, next) => {
   }
 };
 
+export const requireOfficeBodyCompany = async (req, res, next) => {
+  req.params.companyId = req.body?.companyId;
+  return requireOfficeCompany(req, res, next);
+};
+
 export const requireOfficeDocument = async (req, res, next) => {
   try {
     const document = await GeneratedDocument.findById(req.params.documentId).select("company status");

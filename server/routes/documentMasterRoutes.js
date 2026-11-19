@@ -1,4 +1,6 @@
 import express from "express";
+import { protect } from "../middleware/authMiddleware.js";
+import { requireActiveTenant, requireOfficeCompany, requireOfficeBodyCompany } from "../middleware/officeWorkflowAccess.js";
 import {
   saveDocumentMaster,
   getDocumentMaster
@@ -6,7 +8,7 @@ import {
 
 const router = express.Router();
 
-router.post("/save-master", saveDocumentMaster);
-router.get("/:companyId/:documentType", getDocumentMaster);
+router.post("/save-master", protect, requireActiveTenant, requireOfficeBodyCompany, saveDocumentMaster);
+router.get("/:companyId/:documentType", protect, requireActiveTenant, requireOfficeCompany, getDocumentMaster);
 
 export default router;

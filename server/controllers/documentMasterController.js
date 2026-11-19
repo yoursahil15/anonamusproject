@@ -31,7 +31,7 @@ export const saveDocumentMaster = async (req, res) => {
     // ================= CHECK BANK (OPTIONAL) =================
 
     if (bankId) {
-      const bankExists = await Bank.findById(bankId);
+      const bankExists = await Bank.findOne({ _id: bankId, company: companyId });
 
       if (!bankExists) {
         return res.status(404).json({

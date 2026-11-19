@@ -1,6 +1,7 @@
 import axios from "axios";
 import Bank from "../models/Bank.js";
 import Company from "../models/Company.js";
+import { getCompanyScope } from "../utils/officeScope.js";
 
 // ✅ ADD BANK
 export const addBank = async (req, res) => {
@@ -117,6 +118,12 @@ export const deleteBank = async (req, res) => {
         msg: "Bank not found",
       });
     }
+
+    const companyInOffice = await Company.findOne({
+      _id: bank.company,
+      ...(await getCompanyScope(req.user)),
+    }).select("_id");
+    if (!companyInOffice) return res.status(404).json({ msg: "Bank not found" });
 
     // ✅ ONLY TERM LOAN CAN BE DELETED
     if (bank.bankType !== "TERM_LOAN") {

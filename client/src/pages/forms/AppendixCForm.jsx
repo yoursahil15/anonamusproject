@@ -303,10 +303,10 @@ if (editMode) {
       <div className="bg-white p-5 rounded-xl shadow-md">
         {/* HEADER */}
 
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-indigo-700">
+        <div className="form-page-header">
+          <h1>
             Appendix C Form
-          </h2>
+          </h1>
 
           <button
             onClick={() => navigate("/generate")}

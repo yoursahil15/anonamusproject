@@ -28,6 +28,20 @@ const guardLegacyTenantAccess = (
 export const legacyTenantGuard = (req, res, next) =>
   guardLegacyTenantAccess(req, res, next);
 
+// These legacy data APIs now enforce tenant/company scope in their routers.
+export const scopedBankApiGuard = (req, res, next) => {
+  const scopedAdd = req.method === "POST" && req.path === "/add";
+  const scopedList = req.method === "GET" && /^\/company\/[a-f\d]{24}$/i.test(req.path);
+  const scopedDelete = req.method === "DELETE" && /^\/[a-f\d]{24}$/i.test(req.path);
+  if (scopedAdd || scopedList || scopedDelete) return next();
+  return legacyTenantGuard(req, res, next);
+};
+
+export const scopedDocumentMasterApiGuard = (req, res, next) => {
+  if ((req.method === "GET" && /^\/[a-f\d]{24}\/[^/]+$/i.test(req.path)) || (req.method === "POST" && req.path === "/save-master")) return next();
+  return legacyTenantGuard(req, res, next);
+};
+
 // The platform user directory is intentionally cross-tenant for superadmins;
 // getUsers still applies the role-specific query and the API validates the JWT.
 export const legacyUserTenantGuard = (req, res, next) =>
@@ -55,6 +69,8 @@ export const tenantScopedCompanyGuard = (req, res, next) => {
 // document operations remain behind the legacy tenant guard until scoped.
 export const legacyGeneratedListGuard = (req, res, next) => {
   if (req.method === "GET" && req.path.replace(/\/+$/, "") === "/generated") return next();
+  if (req.method === "GET" && req.path === "/checkers") return next();
+  if (req.method === "PUT" && /^\/assign-checker\/[a-f\d]{24}$/i.test(req.path)) return next();
   if (req.method === "GET" && /^\/generated\/[^/]+\/file$/.test(req.path)) return next();
   const scopedGenerationRoutes = [
     "/generate-word/",

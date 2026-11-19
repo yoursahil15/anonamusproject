@@ -146,7 +146,7 @@ router.put("/approver-action/:documentId", protect, requireActiveTenant, require
 router.get("/approval-documents", protect, getApprovalDocuments);
 
 // Lists
-router.get("/checkers", protect, getCheckerList);
+router.get("/checkers", protect, requireActiveTenant, requireMakerPermission, getCheckerList);
 router.get("/approvers", protect, getApproverList);
 
 

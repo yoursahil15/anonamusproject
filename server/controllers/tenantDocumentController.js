@@ -23,6 +23,28 @@ const parseDate = (value) => {
 export const listTenantDocuments = async (req, res) => {
   const { page, limit, skip } = pageParams(req.query);
   const filter = { company: { $in: await scopedCompanyIds(req.user) } };
+  const isTenantAdmin = req.user.role === "admin";
+  if (!isTenantAdmin) {
+    const userId = new mongoose.Types.ObjectId(req.user.id);
+    const workflowScope = [];
+    if (req.user.permissions?.includes("maker")) workflowScope.push({ maker: userId });
+    if (req.user.permissions?.includes("checker")) {
+      workflowScope.push({ status: "PENDING_CHECK", maker: { $ne: userId } });
+      workflowScope.push({ checker: userId });
+    }
+    if (req.user.permissions?.includes("approver")) {
+      workflowScope.push({ status: "PENDING_APPROVAL", maker: { $ne: userId } });
+      workflowScope.push({ approver: userId });
+    }
+    if (!workflowScope.length) {
+      return res.json({
+        success: true,
+        data: [],
+        pagination: { page, limit, total: 0, totalPages: 0 },
+      });
+    }
+    filter.$and = [...(filter.$and || []), { $or: workflowScope }];
+  }
   if (req.query.companyId) {
     if (!validId(req.query.companyId)) return res.status(400).json({ success: false, msg: "Invalid company ID." });
     filter.company = { $in: filter.company.$in, $eq: new mongoose.Types.ObjectId(req.query.companyId) };
@@ -139,6 +161,8 @@ const updateTransition = async (req, res, allowedFrom, toStatus, action, fields 
   if (action === "CHECKED" || action === "REJECTED_BY_CHECKER") {
     if (!req.user.permissions?.includes("checker")) return res.status(403).json({ success: false, msg: "Checker permission is required." });
     if (String(current.maker) === userId) return res.status(403).json({ success: false, msg: "Makers cannot check their own documents." });
+    if (!current.checker) return res.status(409).json({ success: false, msg: "Assign a checker before reviewing this document." });
+    if (String(current.checker) !== userId) return res.status(403).json({ success: false, msg: "Only the assigned checker can review this document." });
   }
   if (action === "APPROVED" || action === "REJECTED_BY_APPROVER") {
     if (!req.user.permissions?.includes("approver")) return res.status(403).json({ success: false, msg: "Approver permission is required." });

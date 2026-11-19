@@ -21,6 +21,7 @@ import {
   ClipboardList,
   ChevronRight,
   FileCheck,
+  FilePlus2,
   AlertCircle,
   RotateCcw,
 } from "lucide-react";
@@ -304,6 +305,9 @@ export default function DocumentMaster() {
   const [documentType, setDocumentType] = useState("");
   const [selectedCompanyData, setSelectedCompanyData] = useState(null);
   const [companyBanks, setCompanyBanks] = useState([]);
+  const [generatedDocuments, setGeneratedDocuments] = useState([]);
+  const [loadingGeneratedDocuments, setLoadingGeneratedDocuments] = useState(false);
+  const [generatedDocumentsError, setGeneratedDocumentsError] = useState("");
   const [staticData, setStaticData] = useState({});
   const [mode, setMode] = useState("");
   const [hasData, setHasData] = useState(false);
@@ -316,6 +320,37 @@ export default function DocumentMaster() {
   const [companySearch, setCompanySearch] = useState("");
 
   const navigate = useNavigate();
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  })();
+  const canGenerateDocuments =
+    currentUser?.role === "superadmin" ||
+    currentUser?.permissions?.includes("maker") ||
+    (currentUser?.role === "admin" && currentUser?.tenantId);
+
+  const generationTemplates = {
+    COVERING_LETTER: "covering-letter",
+    APPENDIX_A: "appendix-a",
+    APPENDIX_B: "appendix-b",
+    APPENDIX_C: "appendix-c",
+    AFFIDAVIT: "affidavit",
+    BANK_INTEREST_CERTIFICATE: "bank-interest",
+    POWER_SUBSIDY: "power-subsidy",
+    INTEREST_SUBSIDY: "interest-subsidy",
+    ELP_FORM: "elp-form",
+    PRODUCTION_EXTRACT: "production-extract",
+    DISBURSEMENT_AGREEMENT: "disbursement-agreement",
+  };
+
+  const handleGenerateDocument = () => {
+    const template = generationTemplates[documentType];
+    if (!selectedCompany || !template) return;
+    navigate(`/generate?companyId=${encodeURIComponent(selectedCompany)}&template=${encodeURIComponent(template)}`);
+  };
 
   const roleOptions = ["Director", "Proprietor", "Partner"];
   const yesNoOptions = ["Yes", "No"];
@@ -612,6 +647,33 @@ export default function DocumentMaster() {
   useEffect(() => {
     fetchCompanies();
   }, [fetchCompanies]);
+
+  useEffect(() => {
+    let active = true;
+    const loadGeneratedDocuments = async () => {
+      setLoadingGeneratedDocuments(true);
+      setGeneratedDocumentsError("");
+      try {
+        const response = currentUser?.tenantId
+          ? await API.get("/tenant/documents", { params: { limit: 100 } })
+          : await API.get("/documents/generated");
+        const rows = currentUser?.tenantId ? response.data?.data : response.data;
+        if (active) setGeneratedDocuments(Array.isArray(rows) ? rows : []);
+      } catch (error) {
+        if (active) {
+          setGeneratedDocumentsError(
+            error.response?.data?.msg || "Unable to load generated documents.",
+          );
+        }
+      } finally {
+        if (active) setLoadingGeneratedDocuments(false);
+      }
+    };
+    loadGeneratedDocuments();
+    return () => {
+      active = false;
+    };
+  }, [currentUser?.tenantId]);
 
   /* =======================================================
      FETCH TERM LOAN BANKS
@@ -1422,6 +1484,76 @@ export default function DocumentMaster() {
           </button>
         </PageHeader>
 
+        <SectionCard
+          title="Generated Documents"
+          description="Documents created for your office and their current workflow status."
+          icon={FileCheck}
+          className="mb-4"
+        >
+          {loadingGeneratedDocuments ? (
+            <p className="text-sm text-slate-500">Loading generated documents...</p>
+          ) : generatedDocumentsError ? (
+            <p role="alert" className="text-sm text-red-600">{generatedDocumentsError}</p>
+          ) : (() => {
+            const rows = selectedCompany
+              ? generatedDocuments.filter(
+                  (doc) => String(doc.company?._id || doc.company) === String(selectedCompany),
+                )
+              : generatedDocuments;
+            if (!rows.length) {
+              return (
+                <p className="text-sm text-slate-500">
+                  {selectedCompany
+                    ? "No generated documents for this company yet."
+                    : "No generated documents found for your office yet."}
+                </p>
+              );
+            }
+            return (
+              <div className="divide-y divide-slate-100">
+                {rows.slice(0, 8).map((doc) => {
+                  const status = String(doc.status || "").toUpperCase();
+                  const statusColor = status === "APPROVED"
+                    ? "green"
+                    : status.includes("REJECTED")
+                      ? "slate"
+                      : status.includes("PENDING")
+                        ? "amber"
+                        : "blue";
+                  const documentName = String(doc.documentType || "Document")
+                    .split("_")
+                    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+                    .join(" ");
+                  const makerName = [doc.maker?.fname, doc.maker?.lname]
+                    .filter(Boolean)
+                    .join(" ");
+                  return (
+                    <div key={doc._id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-slate-900">{documentName}</p>
+                        <p className="mt-0.5 truncate text-xs text-slate-500">
+                          {doc.company?.nameOfCompany || "Company"}{makerName ? ` · Generated by ${makerName}` : ""}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <StatusBadge color={statusColor}>{status.replaceAll("_", " ") || "Unknown"}</StatusBadge>
+                        <button
+                          type="button"
+                          onClick={() => navigate("/document-approval")}
+                          className={secondaryButton}
+                        >
+                          View workflow
+                          <ChevronRight size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
+        </SectionCard>
+
         {/* =================================================
             SELECTION PANEL
         ================================================= */}
@@ -1623,6 +1755,17 @@ export default function DocumentMaster() {
           documentType &&
           !loadingMaster && (
             <div className="mb-4 flex flex-wrap items-center gap-2">
+              {canGenerateDocuments && (
+                <button
+                  type="button"
+                  onClick={handleGenerateDocument}
+                  className={primaryButton}
+                >
+                  <FilePlus2 size={16} />
+                  Generate Document
+                </button>
+              )}
+
               {!hasData ? (
                 <button
                   type="button"

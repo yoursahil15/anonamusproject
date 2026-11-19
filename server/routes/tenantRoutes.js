@@ -66,7 +66,7 @@ router.get("/roles", protect, requireActiveTenant, getTenantRoles);
 router.get("/employees/:employeeId/permissions", protect, requireActiveTenant, getTenantEmployeePermissions);
 router.put("/employees/:employeeId/permissions", protect, requireActiveTenant, requireTenantAdmin, updateTenantEmployeePermissions);
 
-router.get("/documents", protect, requireActiveTenant, requireTenantAdmin, listTenantDocuments);
+router.get("/documents", protect, requireActiveTenant, listTenantDocuments);
 router.post("/documents", protect, requireActiveTenant, authorizePermission("maker"), createTenantGeneratedDocument);
 router.get("/documents/:documentId/history", protect, requireActiveTenant, requireTenantAdmin, getTenantDocumentHistory);
 router.get("/documents/:documentId/download", protect, requireActiveTenant, downloadTenantDocument);

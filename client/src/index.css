@@ -17,8 +17,31 @@
 
 .document-form-theme {
   min-width: 0;
+  min-height: 100% !important;
+  width: 100%;
   color: #0f172a;
-  background-color: #eff6ff !important;
+  background-color: #ECECEC !important;
+  padding: 0 !important;
+}
+
+.document-form-theme > div:first-child {
+  width: 100%;
+  max-width: 1600px !important;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.document-form-theme > div:first-child > * {
+  margin-top: 0 !important;
+}
+
+.document-form-theme > div:first-child.bg-white {
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
 
 .document-form-theme *,
@@ -80,8 +103,97 @@
   cursor: not-allowed;
 }
 
+.document-form-theme > div:first-child > header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.document-form-theme > div:first-child > .form-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.document-form-theme > div:first-child > .form-page-header h1,
+.document-form-theme > div:first-child > .form-page-header h2 {
+  color: #020617;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  letter-spacing: -0.015em;
+}
+
+.document-form-theme > div:first-child > .form-page-header > button {
+  height: 2rem !important;
+  min-height: 2rem;
+  border-radius: 0.5rem;
+  padding: 0 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #334155 !important;
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+}
+
+.document-form-theme > div:first-child > header h1 {
+  color: #020617;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.25rem;
+  letter-spacing: -0.015em;
+}
+
+.document-form-theme > div:first-child > header > div:first-child > div:first-child {
+  display: none !important;
+}
+
+.document-form-theme > div:first-child > header p {
+  color: #64748b !important;
+  font-size: 0.75rem;
+  line-height: 1rem;
+}
+
+.document-form-theme > div:first-child > header > button {
+  height: 2rem !important;
+  min-height: 2rem;
+  border-radius: 0.5rem;
+  padding: 0 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #334155 !important;
+  background: #fff !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 6%);
+}
+
 .document-form-theme section {
-  border-color: #bfdbfe;
+  overflow: hidden;
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 0.75rem !important;
+  background: #fff !important;
+  box-shadow: 0 1px 2px rgb(15 23 42 / 5%);
+}
+
+.document-form-theme section > div:first-child {
+  border-bottom: 1px solid rgb(219 234 254 / 70%) !important;
+  background: linear-gradient(90deg, rgb(239 246 255 / 75%), #fff, rgb(245 243 255 / 45%)) !important;
 }
 
 .document-form-theme [class*="bg-emerald-"],

@@ -58,6 +58,26 @@ const STATUS_LABELS = {
 const getFullName = (person) =>
   `${person?.fname || ""} ${person?.lname || ""}`.trim() || "—";
 
+const hasTenantSession = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem("user") || "null");
+    if (user?.tenantId) return true;
+  } catch {
+    // Fall through to the signed token claims.
+  }
+
+  try {
+    const token = localStorage.getItem("token");
+    const payload = token?.split(".")[1];
+    if (!payload) return false;
+    const base64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const claims = JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")));
+    return Boolean(claims.tenantId);
+  } catch {
+    return false;
+  }
+};
+
 // ================= SMALL COMPONENTS =================
 
 const StatusBadge = memo(function StatusBadge({ status }) {
@@ -136,11 +156,19 @@ const Activity = memo(function Activity({ doc }) {
         dot="bg-blue-500"
       />
 
-      {doc.checkedAt && (
+      {doc.checker && (
         <ActivityItem
-          label="Checked by"
+          label={doc.checkedAt ? "Checked by" : "Assigned checker"}
           person={getFullName(doc.checker)}
           dot="bg-violet-500"
+        />
+      )}
+
+      {!doc.checker && doc.status === "PENDING_CHECK" && (
+        <ActivityItem
+          label="Checker"
+          person="Awaiting checker assignment"
+          dot="bg-amber-500"
         />
       )}
 
@@ -307,10 +335,14 @@ const SUMMARY_CARDS = [
 
 export default function DocumentApproval() {
   const [documents, setDocuments] = useState([]);
+  const [checkers, setCheckers] = useState([]);
+  const [checkerSelections, setCheckerSelections] = useState({});
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState("");
   const [downloadingId, setDownloadingId] = useState("");
+  const [assigningCheckerId, setAssigningCheckerId] = useState("");
+  const [loadingCheckers, setLoadingCheckers] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [error, setError] = useState("");
@@ -342,6 +374,30 @@ export default function DocumentApproval() {
     return [];
   }, [user]);
 
+  useEffect(() => {
+    const canAssign =
+      permissions.includes("maker") ||
+      user?.role === "superadmin" ||
+      (user?.role === "admin" && user?.tenantId);
+    if (!canAssign) return undefined;
+    let active = true;
+    const loadCheckers = async () => {
+      setLoadingCheckers(true);
+      try {
+        const response = await API.get("/documents/checkers");
+        if (active) setCheckers(Array.isArray(response.data) ? response.data : []);
+      } catch (err) {
+        console.error("Failed to load checkers:", err.response?.data || err);
+      } finally {
+        if (active) setLoadingCheckers(false);
+      }
+    };
+    loadCheckers();
+    return () => {
+      active = false;
+    };
+  }, [permissions, user?.role]);
+
   // ================= FETCH DOCUMENTS =================
 
   const fetchDocuments = useCallback(async () => {
@@ -351,15 +407,15 @@ export default function DocumentApproval() {
 
       // Tenant accounts must use the tenant-scoped API. The legacy
       // /documents/approval-documents route is intentionally blocked for them.
-      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
-      const res = storedUser?.tenantId
+      const tenantSession = hasTenantSession();
+      const res = tenantSession
         ? await API.get("/tenant/documents", { params: { limit: 100 } })
         : await API.get("/documents/approval-documents");
-      const rows = storedUser?.tenantId ? res.data?.data : res.data;
+      const rows = tenantSession ? res.data?.data : res.data;
       setDocuments(Array.isArray(rows) ? rows : []);
     } catch (err) {
-      console.error("Failed to fetch documents:", err);
-      setError("Unable to load documents. Please try again.");
+      console.error("Failed to fetch documents:", err.response?.data || err);
+      setError(err.response?.data?.msg || "Unable to load documents. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -441,6 +497,25 @@ export default function DocumentApproval() {
     (documentId, action) => performAction(documentId, action, "approver"),
     [performAction],
   );
+
+  const handleAssignChecker = useCallback(async (documentId) => {
+    const checkerId = checkerSelections[documentId];
+    if (!checkerId) {
+      window.alert("Select a checker before assigning this document.");
+      return;
+    }
+    try {
+      setAssigningCheckerId(documentId);
+      await API.put(`/documents/assign-checker/${documentId}`, { checkerId });
+      setCheckerSelections((current) => ({ ...current, [documentId]: checkerId }));
+      await fetchDocuments();
+      window.alert("Checker assigned. The document is ready for review.");
+    } catch (err) {
+      window.alert(err.response?.data?.msg || "Unable to assign checker.");
+    } finally {
+      setAssigningCheckerId("");
+    }
+  }, [checkerSelections, fetchDocuments]);
 
   // ================= EDIT DOCUMENT =================
 
@@ -560,9 +635,52 @@ export default function DocumentApproval() {
     const busy = processingId === doc._id;
     const anyBusy = Boolean(processingId);
     const downloading = downloadingId === doc._id;
+    const userId = user?._id || user?.id;
+    const makerId = doc.maker?._id || doc.maker;
+    const canAssignChecker =
+      (permissions.includes("maker") || user?.role === "superadmin" || (user?.role === "admin" && user?.tenantId)) &&
+      String(makerId || "") === String(userId || "") &&
+      doc.status === "PENDING_CHECK";
+    const availableCheckers = checkers.filter(
+      (checker) => String(checker._id) !== String(makerId),
+    );
 
     return (
       <div className="flex flex-wrap items-center gap-1.5 lg:justify-end">
+        {canAssignChecker && (
+          <div className="flex w-full flex-col gap-2 rounded-lg border border-blue-100 bg-blue-50/50 p-2 sm:flex-row sm:items-center">
+            <label htmlFor={`checker-${doc._id}`} className="shrink-0 text-xs font-semibold text-slate-700">
+              Assign checker
+            </label>
+            <select
+              id={`checker-${doc._id}`}
+              value={checkerSelections[doc._id] || doc.checker?._id || ""}
+              onChange={(event) => setCheckerSelections((current) => ({
+                ...current,
+                [doc._id]: event.target.value,
+              }))}
+              disabled={loadingCheckers || assigningCheckerId === doc._id || !availableCheckers.length}
+              className="h-9 min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 text-xs text-slate-700 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:bg-slate-100"
+            >
+              <option value="">
+                {loadingCheckers ? "Loading checkers..." : availableCheckers.length ? "Select a checker" : "No eligible checkers"}
+              </option>
+              {availableCheckers.map((checker) => (
+                <option key={checker._id} value={checker._id}>
+                  {getFullName(checker)}{checker.email ? ` (${checker.email})` : ""}
+                </option>
+              ))}
+            </select>
+            <ActionButton
+              onClick={() => handleAssignChecker(doc._id)}
+              disabled={assigningCheckerId === doc._id || !availableCheckers.length}
+              title="Assign this document to a checker"
+            >
+              {assigningCheckerId === doc._id ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+              {doc.checker ? "Update checker" : "Assign checker"}
+            </ActionButton>
+          </div>
+        )}
         <ActionButton
           onClick={() => handleDownload(doc)}
           disabled={downloading || busy}
@@ -589,7 +707,9 @@ export default function DocumentApproval() {
             </ActionButton>
           )}
 
-        {permissions.includes("checker") && doc.status === "PENDING_CHECK" && (
+        {permissions.includes("checker") &&
+          doc.status === "PENDING_CHECK" &&
+          String(doc.checker?._id || doc.checker || "") === String(user?._id || user?.id || "") && (
           <>
             <ActionButton
               variant="success"

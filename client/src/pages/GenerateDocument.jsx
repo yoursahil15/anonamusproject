@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import API from "../services/api";
 import {
-  FilePlus2,
   Building2,
   FileText,
   ArrowRight,
@@ -80,9 +80,10 @@ const TEMPLATES = [
 ];
 
 export default function GenerateDocument() {
+  const [searchParams] = useSearchParams();
   const [companies, setCompanies] = useState([]);
-  const [selectedCompany, setSelectedCompany] = useState("");
-  const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [selectedCompany, setSelectedCompany] = useState(() => searchParams.get("companyId") || "");
+  const [selectedTemplate, setSelectedTemplate] = useState(() => searchParams.get("template") || "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -143,41 +144,38 @@ export default function GenerateDocument() {
   // ================= UI =================
 
   return (
-    <div className="document-form-theme min-h-full">
-      <div className="mx-auto max-w-6xl space-y-4">
+    <div className="min-h-full pb-8">
+      <div className="mx-auto max-w-[1600px] space-y-6">
         {/* HEADER */}
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm">
-              <FilePlus2 size={20} />
-            </div>
-
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Generate Document
-              </h1>
-              <p className="mt-0.5 text-xs text-slate-500">
-                Select a company and template to create a document.
-              </p>
-            </div>
+        <header className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-blue-700">
+              Document workflow
+            </p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+              Generate Document
+            </h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Choose a company and template to prepare a document.
+            </p>
           </div>
 
           <button
             type="button"
             onClick={fetchCompanies}
             disabled={loading}
-            className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
+            className="inline-flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3.5 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:opacity-50"
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
             Refresh
           </button>
-        </div>
+        </header>
 
         {/* ERROR MESSAGE */}
 
         {error && (
-          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+          <div role="alert" className="flex items-center gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
             <AlertCircle size={16} className="shrink-0" />
             <span className="flex-1">{error}</span>
 
@@ -193,19 +191,19 @@ export default function GenerateDocument() {
 
         {/* MAIN CARD */}
 
-        <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           {/* CARD HEADER */}
 
-          <div className="flex items-center gap-3 border-b border-slate-200 px-4 py-3 sm:px-5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+          <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
               <FileText size={17} />
             </div>
 
             <div>
-              <h2 className="text-sm font-semibold text-slate-800">
+              <h2 className="text-sm font-semibold text-slate-900">
                 Document Details
               </h2>
-              <p className="mt-0.5 text-[11px] text-slate-500">
+              <p className="mt-1 text-xs text-slate-500">
                 Choose the company and document type.
               </p>
             </div>
@@ -213,14 +211,14 @@ export default function GenerateDocument() {
 
           {/* FORM */}
 
-          <div className="space-y-5 p-4 sm:p-5">
+          <div className="space-y-6 p-5 sm:p-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               {/* COMPANY */}
 
               <div>
                 <label
                   htmlFor="company"
-                  className="mb-1.5 block text-xs font-semibold text-slate-700"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
                 >
                   Company Name <span className="text-red-500">*</span>
                 </label>
@@ -236,7 +234,7 @@ export default function GenerateDocument() {
                     value={selectedCompany}
                     onChange={handleCompanyChange}
                     disabled={loading}
-                    className="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
+                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50"
                   >
                     <option value="">
                       {loading ? "Loading companies..." : "Select a company"}
@@ -263,7 +261,7 @@ export default function GenerateDocument() {
               <div>
                 <label
                   htmlFor="template"
-                  className="mb-1.5 block text-xs font-semibold text-slate-700"
+                  className="mb-1.5 block text-sm font-medium text-slate-700"
                 >
                   Document Template <span className="text-red-500">*</span>
                 </label>
@@ -279,7 +277,7 @@ export default function GenerateDocument() {
                     value={selectedTemplate}
                     onChange={(e) => setSelectedTemplate(e.target.value)}
                     disabled={!selectedCompany || loading}
-                    className="h-10 w-full appearance-none rounded-lg border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                   >
                     <option value="">Select a template</option>
 
@@ -313,18 +311,18 @@ export default function GenerateDocument() {
             {/* SELECTED TEMPLATE PREVIEW */}
 
             {selectedTemplateData && (
-              <div className="flex flex-col justify-between gap-3 rounded-lg border border-blue-100 bg-blue-50/60 p-3 sm:flex-row sm:items-center">
+              <div className="flex flex-col justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-blue-600 shadow-sm">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-blue-700 shadow-sm ring-1 ring-slate-200">
                     <FileText size={18} />
                   </div>
 
                   <div>
-                    <p className="text-xs font-semibold text-slate-800">
+                    <p className="text-sm font-semibold text-slate-900">
                       {selectedTemplateData.label}
                     </p>
 
-                    <p className="mt-0.5 text-[11px] text-slate-500">
+                    <p className="mt-1 text-xs text-slate-500">
                       Company:{" "}
                       <span className="font-medium text-slate-700">
                         {selectedCompanyData?.nameOfCompany}
@@ -333,7 +331,7 @@ export default function GenerateDocument() {
                   </div>
                 </div>
 
-                <span className="inline-flex w-fit items-center gap-1 rounded-md bg-white px-2 py-1 text-[10px] font-medium text-blue-700 ring-1 ring-blue-100">
+                <span className="inline-flex w-fit items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700 ring-1 ring-emerald-200">
                   <CheckCircle2 size={12} />
                   Ready to open
                 </span>
@@ -342,8 +340,8 @@ export default function GenerateDocument() {
 
             {/* ACTIONS */}
 
-            <div className="flex flex-col-reverse gap-2 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[11px] text-slate-400">
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs text-slate-500">
                 <span className="text-red-500">*</span> Required selections
               </p>
 
@@ -355,7 +353,7 @@ export default function GenerateDocument() {
                     setSelectedTemplate("");
                   }}
                   disabled={!selectedCompany && !selectedTemplate}
-                  className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="h-10 rounded-xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Reset
                 </button>
@@ -364,7 +362,7 @@ export default function GenerateDocument() {
                   type="button"
                   onClick={handleNavigation}
                   disabled={!selectedCompany || !selectedTemplate || loading}
-                  className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+                  className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
                 >
                   Open Document
                   <ArrowRight size={15} />
@@ -376,7 +374,7 @@ export default function GenerateDocument() {
 
         {/* FOOTER NOTE */}
 
-        <p className="px-1 text-[11px] text-slate-400">
+        <p className="px-1 text-xs text-slate-500">
           Select a company before choosing a document template.
         </p>
       </div>

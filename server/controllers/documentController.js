@@ -4,7 +4,7 @@ import DocumentMaster from "../models/DocumentMaster.js";
 import GeneratedDocument from "../models/GeneratedDocument.js";
 import mongoose from "mongoose";
 import User from "../models/User.js";
-import { getOfficeCompanyIds } from "../utils/officeScope.js";
+import { getOfficeAdminId, getOfficeCompanyIds } from "../utils/officeScope.js";
 
 import pdf from "html-pdf-node";
 
@@ -1571,9 +1571,8 @@ export const checkerAction = async (req, res) => {
       });
     }
     if (String(document.maker) === String(req.user.id)) return res.status(403).json({ msg: "Makers cannot check their own documents." });
-
-    // Save checker name
-    document.checker = req.user.id;
+    if (!document.checker) return res.status(409).json({ msg: "Assign a checker before reviewing this document." });
+    if (String(document.checker) !== String(req.user.id)) return res.status(403).json({ msg: "Only the assigned checker can review this document." });
 
     if (action === "approve") {
       document.status = "PENDING_APPROVAL";
@@ -1757,8 +1756,14 @@ export const assignChecker = async (req, res) => {
       permissions: "checker",
       isActive: true,
       ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}),
+      ...(req.user.tenantId || req.user.role === "superadmin"
+        ? {}
+        : { $and: [{ _id: { $in: await getOfficeStaffIds(req.user) } }] }),
     }).select("_id");
     if (!checker) return res.status(400).json({ msg: "Select an active checker from your tenant." });
+    if (checker._id.toString() === document.maker.toString()) {
+      return res.status(400).json({ msg: "The maker cannot be assigned as their own checker." });
+    }
 
     document.checker = checker._id;
     document.status = "PENDING_CHECK";
@@ -1796,12 +1801,33 @@ export const getMyDocuments = async (req, res) => {
 
 // ================= GET CHECKER LIST =================
 
+const getOfficeStaffIds = async (user) => {
+  const officeAdminId = await getOfficeAdminId(user);
+  if (!officeAdminId) return [user.id];
+  const managerIds = await User.distinct("_id", {
+    admin: officeAdminId,
+    role: "manager",
+  });
+  return User.distinct("_id", {
+    $or: [
+      { _id: officeAdminId },
+      { admin: officeAdminId },
+      ...(managerIds.length ? [{ manager: { $in: managerIds } }] : []),
+    ],
+  });
+};
+
 export const getCheckerList = async (req, res) => {
   try {
-    const checkers = await User.find({
+    const filter = {
       permissions: "checker",
       isActive: true,
-    }).select("_id fname lname email");
+      ...(req.user.tenantId ? { tenantId: req.user.tenantId } : {}),
+    };
+    if (!req.user.tenantId && req.user.role !== "superadmin") {
+      filter._id = { $in: await getOfficeStaffIds(req.user) };
+    }
+    const checkers = await User.find(filter).select("_id fname lname email").sort({ fname: 1, lname: 1 });
 
     res.json(checkers);
   } catch (error) {

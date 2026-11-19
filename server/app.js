@@ -24,6 +24,8 @@ import {
   legacyUserTenantGuard,
   tenantScopedCompanyGuard,
   legacyGeneratedListGuard,
+  scopedBankApiGuard,
+  scopedDocumentMasterApiGuard,
 } from "./middleware/legacyTenantGuard.js";
 
 const app = express();
@@ -92,9 +94,9 @@ app.use("/api/uploads", legacyTenantGuard);
 app.use("/api/users", legacyUserTenantGuard);
 app.use("/api/companies", tenantScopedCompanyGuard);
 app.use("/documents", legacyTenantGuard);
-app.use("/api/banks", legacyTenantGuard);
+app.use("/api/banks", scopedBankApiGuard);
 app.use("/api/documents", legacyGeneratedListGuard);
-app.use("/api/document-master", legacyTenantGuard);
+app.use("/api/document-master", scopedDocumentMasterApiGuard);
 app.use("/api/company-documents", legacyTenantGuard);
 
 // =====================================
