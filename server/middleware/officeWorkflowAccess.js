@@ -64,7 +64,8 @@ export const authorizePermission = (permission) => (req, res, next) => {
 };
 
 export const requireMakerPermission = (req, res, next) => {
-  if (req.user?.role === "superadmin" || req.user?.permissions?.includes("maker")) return next();
+  const isTenantAdmin = req.user?.role === "admin" && req.user?.tenantId;
+  if (req.user?.role === "superadmin" || req.user?.permissions?.includes("maker") || isTenantAdmin) return next();
   return res.status(403).json({ msg: "Maker permission is required to create documents." });
 };
 

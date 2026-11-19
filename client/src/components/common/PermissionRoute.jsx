@@ -12,6 +12,7 @@ export default function PermissionRoute({
   children,
   allowedRoles = [],
   requiredPermissions = [],
+  allowTenantAdmin = false,
   match = "any",
   redirectTo = "/dashboard",
 }) {
@@ -27,6 +28,9 @@ export default function PermissionRoute({
   }
   if (requiredPermissions.length) {
     checks.push(requiredPermissions.some((permission) => permissions.includes(permission)));
+  }
+  if (allowTenantAdmin) {
+    checks.push(role === "admin" && Boolean(user.tenantId));
   }
 
   const allowed = checks.length === 0 || (match === "all" ? checks.every(Boolean) : checks.some(Boolean));
