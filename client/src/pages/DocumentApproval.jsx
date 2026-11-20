@@ -384,7 +384,10 @@ export default function DocumentApproval() {
     const loadCheckers = async () => {
       setLoadingCheckers(true);
       try {
-        const response = await API.get("/documents/checkers");
+        const checkerEndpoint = hasTenantSession()
+          ? "/tenant/documents/checkers"
+          : "/documents/checkers";
+        const response = await API.get(checkerEndpoint);
         if (active) setCheckers(Array.isArray(response.data) ? response.data : []);
       } catch (err) {
         console.error("Failed to load checkers:", err.response?.data || err);
@@ -506,7 +509,10 @@ export default function DocumentApproval() {
     }
     try {
       setAssigningCheckerId(documentId);
-      await API.put(`/documents/assign-checker/${documentId}`, { checkerId });
+      const assignEndpoint = hasTenantSession()
+        ? `/tenant/documents/${documentId}/assign-checker`
+        : `/documents/assign-checker/${documentId}`;
+      await API.put(assignEndpoint, { checkerId });
       setCheckerSelections((current) => ({ ...current, [documentId]: checkerId }));
       await fetchDocuments();
       window.alert("Checker assigned. The document is ready for review.");
@@ -637,9 +643,11 @@ export default function DocumentApproval() {
     const downloading = downloadingId === doc._id;
     const userId = user?._id || user?.id;
     const makerId = doc.maker?._id || doc.maker;
+    const isTenantAdmin = user?.role === "admin" && Boolean(user?.tenantId);
     const canAssignChecker =
-      (permissions.includes("maker") || user?.role === "superadmin" || (user?.role === "admin" && user?.tenantId)) &&
-      String(makerId || "") === String(userId || "") &&
+      ((permissions.includes("maker") && String(makerId || "") === String(userId || "")) ||
+        isTenantAdmin ||
+        (user?.role === "superadmin" && String(makerId || "") === String(userId || ""))) &&
       doc.status === "PENDING_CHECK";
     const availableCheckers = checkers.filter(
       (checker) => String(checker._id) !== String(makerId),

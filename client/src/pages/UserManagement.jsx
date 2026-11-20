@@ -11,6 +11,19 @@ AlertCircle,
 import API from "../services/api";
 
 const PERMISSIONS = ["maker", "checker", "approver"];
+const PERMISSION_HELP = {
+  maker: "Creates documents and assigns a checker to their own documents.",
+  checker: "Reviews assigned documents and sends accepted documents for approval.",
+  approver: "Performs the final approval after checking.",
+};
+
+const hasTenantSession = () => {
+  try {
+    return Boolean(JSON.parse(localStorage.getItem("user") || "null")?.tenantId);
+  } catch {
+    return false;
+  }
+};
 
 export default function UserManagement() {
 const [users, setUsers] = useState([]);
@@ -60,7 +73,11 @@ setUsers((prev) =>
 );
 
 try {
-  await API.put(`/users/${userId}`, { isActive });
+  if (hasTenantSession()) {
+    await API.patch(`/tenant/employees/${userId}/status`, { isActive });
+  } else {
+    await API.put(`/users/${userId}`, { isActive });
+  }
 } catch (err) {
   console.error("Failed to update status:", err);
   setUsers(previousUsers);
@@ -95,9 +112,10 @@ setUsers((prev) =>
 );
 
 try {
-  await API.put(`/users/permissions/${userId}`, {
-    permissions: updatedPermissions,
-  });
+  const endpoint = hasTenantSession()
+    ? `/tenant/employees/${userId}/permissions`
+    : `/users/permissions/${userId}`;
+  await API.put(endpoint, { permissions: updatedPermissions });
 } catch (err) {
   console.error("Failed to update permissions:", err);
   setUsers(previousUsers);
@@ -223,7 +241,7 @@ return (
             Team Members
           </h2>
           <p className="mt-0.5 text-[11px] text-slate-500">
-            Configure workflow access for each user
+            Choose what each team member can do in the document workflow
           </p>
         </div>
 
@@ -233,6 +251,14 @@ return (
             {filteredUsers.length !== 1 ? "s" : ""}
           </span>
         )}
+      </div>
+
+      <div className="grid gap-2 border-b border-slate-100 bg-blue-50/50 px-4 py-3 text-[11px] text-slate-600 sm:grid-cols-3">
+        {PERMISSIONS.map((permission) => (
+          <p key={permission} title={PERMISSION_HELP[permission]}>
+            <span className="font-semibold capitalize text-slate-800">{permission}:</span> {PERMISSION_HELP[permission]}
+          </p>
+        ))}
       </div>
 
       <div className="overflow-x-auto">

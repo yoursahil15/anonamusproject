@@ -1,7 +1,7 @@
 import express from "express";
 import { getTenantDashboardStats } from "../controllers/tenantDashboardController.js";
 import { protect } from "../middleware/authMiddleware.js";
-import { requireActiveTenant, requireTenantAdmin, requireTenantMembership } from "../middleware/officeWorkflowAccess.js";
+import { requireActiveTenant, requireMakerPermission, requireTenantAdmin, requireTenantMembership } from "../middleware/officeWorkflowAccess.js";
 import {
   createTenantCompany,
   getTenantCompany,
@@ -19,12 +19,14 @@ import {
 } from "../controllers/tenantManagementController.js";
 import {
   approveTenantDocument,
+  assignTenantChecker,
   checkTenantDocument,
   downloadTenantDocument,
   editTenantRejectedDocument,
   getTenantDocument,
   getTenantDocumentHistory,
   listTenantDocuments,
+  listTenantCheckers,
   listTenantWorkflow,
   submitTenantDocument,
 } from "../controllers/tenantDocumentController.js";
@@ -67,6 +69,8 @@ router.get("/employees/:employeeId/permissions", protect, requireActiveTenant, g
 router.put("/employees/:employeeId/permissions", protect, requireActiveTenant, requireTenantAdmin, updateTenantEmployeePermissions);
 
 router.get("/documents", protect, requireActiveTenant, listTenantDocuments);
+router.get("/documents/checkers", protect, requireActiveTenant, requireMakerPermission, listTenantCheckers);
+router.put("/documents/:documentId/assign-checker", protect, requireActiveTenant, requireMakerPermission, assignTenantChecker);
 router.post("/documents", protect, requireActiveTenant, authorizePermission("maker"), createTenantGeneratedDocument);
 router.get("/documents/:documentId/history", protect, requireActiveTenant, requireTenantAdmin, getTenantDocumentHistory);
 router.get("/documents/:documentId/download", protect, requireActiveTenant, downloadTenantDocument);

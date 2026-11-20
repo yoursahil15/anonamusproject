@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import Company from "../models/Company.js";
 import GeneratedDocument from "../models/GeneratedDocument.js";
+import User from "../models/User.js";
 import { getCompanyScope } from "../utils/officeScope.js";
 import { editGeneratedDocument, getGeneratedDocumentFile } from "./documentController.js";
 import { recordTenantActivity, createTenantNotification, createTenantNotificationsForPermissions } from "./tenantSupportController.js";
@@ -78,6 +79,53 @@ export const listTenantDocuments = async (req, res) => {
     GeneratedDocument.countDocuments(filter),
   ]);
   return res.json({ success: true, data, pagination: { page, limit, total, totalPages: Math.ceil(total / limit) } });
+};
+
+export const listTenantCheckers = async (req, res) => {
+  const checkers = await User.find({
+    tenantId: req.user.tenantId,
+    permissions: "checker",
+    isActive: true,
+    accountStatus: { $ne: "INACTIVE" },
+    isApproved: true,
+    isVerified: true,
+  }).select("_id fname lname email").sort({ fname: 1, lname: 1 }).lean();
+  return res.json(checkers);
+};
+
+export const assignTenantChecker = async (req, res) => {
+  if (!validId(req.params.documentId) || !validId(req.body?.checkerId)) {
+    return res.status(400).json({ success: false, msg: "Select a valid checker." });
+  }
+  const document = await GeneratedDocument.findOne({
+    _id: req.params.documentId,
+    company: { $in: await scopedCompanyIds(req.user) },
+  });
+  if (!document) return res.status(404).json({ success: false, msg: "Document not found in this tenant." });
+  const isTenantAdmin = req.user.role === "admin";
+  const isMaker = req.user.permissions?.includes("maker") && String(document.maker) === String(req.user.id);
+  if (!isTenantAdmin && !isMaker) {
+    return res.status(403).json({ success: false, msg: "Only the document maker or a tenant administrator can assign a checker." });
+  }
+  if (document.status !== "PENDING_CHECK") {
+    return res.status(409).json({ success: false, msg: "Only documents waiting for a checker can be assigned." });
+  }
+  const checker = await User.findOne({
+    _id: req.body.checkerId,
+    tenantId: req.user.tenantId,
+    permissions: "checker",
+    isActive: true,
+    accountStatus: { $ne: "INACTIVE" },
+    isApproved: true,
+    isVerified: true,
+  }).select("_id");
+  if (!checker) return res.status(400).json({ success: false, msg: "Select an active checker from your tenant." });
+  if (String(checker._id) === String(document.maker)) {
+    return res.status(400).json({ success: false, msg: "The maker cannot be assigned as their own checker." });
+  }
+  document.checker = checker._id;
+  await document.save();
+  return res.json({ success: true, msg: "Checker assigned successfully.", data: document });
 };
 
 export const getTenantDocument = async (req, res) => {

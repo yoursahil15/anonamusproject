@@ -1732,18 +1732,24 @@ export const assignChecker = async (req, res) => {
       return res.status(404).json({ msg: "Document not found" });
     }
 
-    // ?? FIX 1: maker fallback safety
+    const isTenantAdmin = req.user.role === "admin" && Boolean(req.user.tenantId);
+
+    // Makers can assign their own documents; tenant admins can assign any
+    // document already scoped to their tenant by the route middleware.
     if (!document.maker) {
       return res.status(400).json({
         msg: "Document missing maker. Regenerate document.",
       });
     }
 
-    // ?? FIX 2: safer comparison
-    if (document.maker.toString() !== req.user.id.toString()) {
+    if (!isTenantAdmin && document.maker.toString() !== req.user.id.toString()) {
       return res.status(403).json({
-        msg: "Only maker can assign checker",
+        msg: "Only the document maker or a tenant administrator can assign a checker.",
       });
+    }
+
+    if (document.status !== "PENDING_CHECK") {
+      return res.status(409).json({ msg: "Only documents waiting for a checker can be assigned." });
     }
 
     // ?? FIX 3: validate checkerId

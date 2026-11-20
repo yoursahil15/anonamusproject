@@ -915,9 +915,8 @@ export default function TenantDashboard() {
             />
           )}
           <div className="border-t border-slate-100 bg-slate-50/70 px-5 py-3 text-xs leading-5 text-slate-600">
-            Tenant admins can create staff through the existing user API.
-            Editing accounts and assigning maker, checker, or approver
-            permissions are restricted to superadmin by the current API.
+            Tenant admins can create staff and assign maker, checker, or
+            approver workflow permissions from User Management.
           </div>
         </Panel>
       </div>

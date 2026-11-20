@@ -8,6 +8,7 @@ import {
   RefreshCw,
   CheckCircle2,
   AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 
 const TEMPLATES = [
@@ -84,6 +85,7 @@ export default function GenerateDocument() {
   const [companies, setCompanies] = useState([]);
   const [selectedCompany, setSelectedCompany] = useState(() => searchParams.get("companyId") || "");
   const [selectedTemplate, setSelectedTemplate] = useState(() => searchParams.get("template") || "");
+  const [templateMenuOpen, setTemplateMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -191,7 +193,7 @@ export default function GenerateDocument() {
 
         {/* MAIN CARD */}
 
-        <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <section className="relative rounded-2xl border border-slate-200 bg-white shadow-sm">
           {/* CARD HEADER */}
 
           <div className="flex items-center gap-3 border-b border-slate-100 bg-slate-50/70 px-5 py-4 sm:px-6">
@@ -272,32 +274,44 @@ export default function GenerateDocument() {
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
                   />
 
-                  <select
+                  <button
                     id="template"
-                    value={selectedTemplate}
-                    onChange={(e) => setSelectedTemplate(e.target.value)}
+                    type="button"
+                    role="combobox"
+                    aria-haspopup="listbox"
+                    aria-expanded={templateMenuOpen}
+                    aria-controls="template-options"
+                    onClick={() => setTemplateMenuOpen((open) => !open)}
                     disabled={!selectedCompany || loading}
-                    className="h-11 w-full appearance-none rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-sm text-slate-700 outline-none transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                    className="flex h-11 w-full items-center justify-between rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-left text-sm text-slate-700 outline-none transition hover:border-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                   >
-                    <option value="">Select a template</option>
-
-                    {[
-                      "General Documents",
-                      "Appendices",
-                      "Financial Documents",
-                      "Subsidy Documents",
-                    ].map((category) => (
-                      <optgroup key={category} label={category}>
-                        {TEMPLATES.filter(
-                          (template) => template.category === category,
-                        ).map((template) => (
-                          <option key={template.value} value={template.value}>
-                            {template.label}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
+                    <span>{selectedTemplateData?.label || "Select a template"}</span>
+                    <ChevronDown size={16} className={`text-slate-400 transition-transform ${templateMenuOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {templateMenuOpen && selectedCompany && !loading && (
+                    <div id="template-options" role="listbox" aria-labelledby="template" className="absolute left-0 top-full z-50 mt-2 max-h-72 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl">
+                      {["General Documents", "Appendices", "Financial Documents", "Subsidy Documents"].map((category) => (
+                        <div key={category}>
+                          <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400">{category}</p>
+                          {TEMPLATES.filter((template) => template.category === category).map((template) => (
+                            <button
+                              key={template.value}
+                              type="button"
+                              role="option"
+                              aria-selected={selectedTemplate === template.value}
+                              onClick={() => {
+                                setSelectedTemplate(template.value);
+                                setTemplateMenuOpen(false);
+                              }}
+                              className={`block w-full rounded-lg px-3 py-2 text-left text-sm transition ${selectedTemplate === template.value ? "bg-blue-50 font-medium text-blue-700" : "text-slate-700 hover:bg-slate-50"}`}
+                            >
+                              {template.label}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {!selectedCompany && (

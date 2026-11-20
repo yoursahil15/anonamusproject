@@ -15,6 +15,9 @@ import {
   Workflow,
   History,
   Inbox,
+  Check,
+  X,
+  Loader2,
 } from "lucide-react";
 
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
@@ -127,6 +130,9 @@ export default function Dashboard() {
   });
 
   const [recentDocuments, setRecentDocuments] = useState([]);
+  const [approvalDocuments, setApprovalDocuments] = useState([]);
+  const [processingDocumentId, setProcessingDocumentId] = useState("");
+  const canApproveDocuments = Array.isArray(user?.permissions) && user.permissions.includes("approver");
 
   const loadDashboard = useCallback(async () => {
     try {
@@ -154,6 +160,7 @@ export default function Dashboard() {
         .slice(0, 7);
 
       setRecentDocuments(recentDocs);
+      setApprovalDocuments(documents.filter((doc) => doc.status === "PENDING_APPROVAL"));
 
       setStats({
         companies: companies.length,
@@ -168,6 +175,32 @@ export default function Dashboard() {
       setLoading(false);
     }
   }, []);
+
+  const handleApprovalAction = useCallback(async (doc, action) => {
+    let reason = "";
+    if (action === "reject") {
+      reason = window.prompt("Enter the reason for rejection:");
+      if (reason === null) return;
+      reason = reason.trim();
+      if (!reason) {
+        window.alert("Rejection reason is required.");
+        return;
+      }
+    }
+    try {
+      setProcessingDocumentId(doc._id);
+      if (user?.tenantId) {
+        await API.post(`/tenant/documents/${doc._id}/approve`, { action, reason });
+      } else {
+        await API.put(`/documents/approver-action/${doc._id}`, { action, reason });
+      }
+      await loadDashboard();
+    } catch (err) {
+      window.alert(err.response?.data?.msg || "Unable to update document approval.");
+    } finally {
+      setProcessingDocumentId("");
+    }
+  }, [loadDashboard, user?.tenantId]);
 
   useEffect(() => {
     loadDashboard();
@@ -442,6 +475,58 @@ export default function Dashboard() {
             </Panel>
           </div>
         </div>
+
+        {canApproveDocuments && (
+          <Panel
+            title="Documents awaiting your approval"
+            icon={CheckCircle2}
+            action={
+              <Link to="/document-approval" className="text-xs font-medium text-blue-600 hover:text-blue-700">
+                Open approval page
+              </Link>
+            }
+          >
+            {loading ? (
+              <div className="p-5 text-xs text-slate-500">Loading documents awaiting approval…</div>
+            ) : approvalDocuments.length === 0 ? (
+              <div className="flex flex-col items-center py-8 text-center">
+                <Inbox size={24} className="mb-2 text-slate-300" />
+                <p className="text-xs text-slate-500">No documents are waiting for your approval.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100">
+                {approvalDocuments.slice(0, 6).map((doc) => {
+                  const busy = processingDocumentId === doc._id;
+                  return (
+                    <li key={doc._id} className="flex flex-wrap items-center gap-3 px-4 py-3">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold text-slate-800">
+                          {doc.company?.nameOfCompany || "Company"} · {String(doc.documentType || "Document").replaceAll("_", " ")}
+                        </p>
+                        <p className="mt-1 text-[11px] text-slate-500">
+                          Maker: {doc.maker?.fname || "Unknown"} · {formatDate(getDocDate(doc))}
+                        </p>
+                      </div>
+                      <div className="flex shrink-0 gap-2">
+                        <button type="button" onClick={() => handleApprovalAction(doc, "approve")} disabled={Boolean(processingDocumentId)} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50">
+                          {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Approve
+                        </button>
+                        <button type="button" onClick={() => handleApprovalAction(doc, "reject")} disabled={Boolean(processingDocumentId)} className="inline-flex items-center gap-1 rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50">
+                          <X size={13} /> Reject
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            {approvalDocuments.length > 6 && (
+              <div className="border-t border-slate-100 px-4 py-2 text-[11px] text-slate-500">
+                Showing 6 of {approvalDocuments.length} documents. Open the approval page to see the rest.
+              </div>
+            )}
+          </Panel>
+        )}
       </div>
     </div>
   );
